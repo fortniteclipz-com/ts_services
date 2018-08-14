@@ -1,6 +1,6 @@
 service-clip:
   handler: run.run
-  module: modules/services/clip
+  module: modules/clip
   timeout: 30
   events:
     - sqs:
@@ -11,13 +11,13 @@ service-clip:
         batchSize: 1
   package:
     include:
-      - modules/services/clip/run.py
-      - modules/services/clip/helpers.py
+      - modules/clip/run.py
+      - modules/clip/helpers.py
       - libs/ffprobe
 
 service-montage:
   handler: run.run
-  module: modules/services/montage
+  module: modules/montage
   timeout: 30
   events:
     - sqs:
@@ -28,11 +28,11 @@ service-montage:
         batchSize: 1
   package:
     include:
-      - modules/services/montage/run.py
+      - modules/montage/run.py
 
 service-stream-segment:
   handler: run.run
-  module: modules/services/stream_segment
+  module: modules/stream_segment
   memorySize: 1024
   timeout: 180
   events:
@@ -44,7 +44,7 @@ service-stream-segment:
         batchSize: 1
   package:
     include:
-      - modules/services/stream_segment/run.py
+      - modules/stream_segment/run.py
       - libs/ffmpeg
       - libs/ffprobe
 

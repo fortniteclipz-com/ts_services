@@ -1,4 +1,4 @@
-service: twitch-stitch
+service: twitch-stitch-service
 
 provider:
   name: aws
@@ -6,11 +6,9 @@ provider:
   profile: serverless-admin
   region: us-west-1
   runtime: python3.6
-  # stage: dev
+  stage: dev
   timeout: 30
   versionFunctions: false
-  apiKeys:
-    - ts_api_key
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -42,14 +40,6 @@ package:
   exclude:
     - '*/**'
 
-functions:
-  - ${file(./config/apis.yml)}
-  - ${file(./config/services.yml)}
-
-resources:
-  - ${file(./config/databases.yml)}
-  - ${file(./config/queues.yml)}
-
 plugins:
   - serverless-python-requirements
 
@@ -58,3 +48,5 @@ custom:
     dockerizePip: non-linux
     dockerSsh: true
 
+functions:
+  - ${file(./config/services.yml)}
