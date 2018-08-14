@@ -2,6 +2,7 @@ service: twitch-stitch-service
 
 provider:
   name: aws
+  deploymentBucket: twitch-stitch-sls-service
   memorySize: 512
   profile: serverless-admin
   region: us-west-1
@@ -9,6 +10,7 @@ provider:
   stage: dev
   timeout: 30
   versionFunctions: false
+
   iamRoleStatements:
     - Effect: Allow
       Action:
