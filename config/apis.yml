@@ -1,0 +1,59 @@
+api-clip-create:
+  handler: run.run
+  module: modules/apis/clip_create
+  timeout: 30
+  events:
+      - http:
+          path: clip
+          method: post
+          cors: true
+          integration: lambda
+          private: true
+  package:
+    include:
+      - modules/apis/clip_create/run.py
+
+api-clip-get-all:
+  handler: run.run
+  module: modules/apis/clip_get_all
+  timeout: 30
+  events:
+      - http:
+          path: clip
+          method: get
+          cors: true
+          integration: lambda
+          private: true
+  package:
+    include:
+      - modules/apis/clip_get_all/run.py
+
+api-montage-create:
+  handler: run.run
+  module: modules/apis/montage_create
+  timeout: 30
+  events:
+      - http:
+          path: montage
+          method: post
+          cors: true
+          integration: lambda
+          private: true
+  package:
+    include:
+      - modules/apis/montage_create/run.py
+
+api-montage-get-all:
+  handler: run.run
+  module: modules/apis/montage_get_all
+  timeout: 30
+  events:
+      - http:
+          path: montage
+          method: get
+          cors: true
+          integration: lambda
+          private: true
+  package:
+    include:
+      - modules/apis/montage_get_all/run.py

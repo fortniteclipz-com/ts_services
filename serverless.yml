@@ -1,0 +1,60 @@
+service: twitch-stitch
+
+provider:
+  name: aws
+  memorySize: 512
+  profile: serverless-admin
+  region: us-west-1
+  runtime: python3.6
+  # stage: dev
+  timeout: 30
+  versionFunctions: false
+  apiKeys:
+    - ts_api_key
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:BatchGetItem
+        - dynamodb:BatchWriteItem
+      Resource: arn:aws:dynamodb:us-west-1:*:*
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+      Resource: arn:aws:s3:::*
+    - Effect: Allow
+      Action:
+        - sqs:GetQueueUrl
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+      Resource: arn:aws:sqs:us-west-1:*:*
+
+package:
+  individually: true
+  exclude:
+    - '*/**'
+
+functions:
+  - ${file(./config/apis.yml)}
+  - ${file(./config/services.yml)}
+
+resources:
+  - ${file(./config/databases.yml)}
+  - ${file(./config/queues.yml)}
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+    dockerSsh: true
+

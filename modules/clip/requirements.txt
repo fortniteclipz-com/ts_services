@@ -1,0 +1,8 @@
+git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_aws&subdirectory=ts_aws
+git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_config&subdirectory=ts_config
+git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_file&subdirectory=ts_file
+git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_http&subdirectory=ts_http
+git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_logger&subdirectory=ts_logger
+git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_media&subdirectory=ts_media
+
+streamlink==0.14.2

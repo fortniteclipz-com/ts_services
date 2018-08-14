@@ -1,0 +1,126 @@
+Resources:
+  StreamTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ts-streams
+      AttributeDefinitions:
+        - AttributeName: stream_id
+          AttributeType: N
+      KeySchema:
+        - AttributeName: stream_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  StreamSegmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ts-stream-segments
+      AttributeDefinitions:
+        - AttributeName: stream_id
+          AttributeType: N
+        - AttributeName: segment
+          AttributeType: N
+      KeySchema:
+        - AttributeName: stream_id
+          KeyType: HASH
+        - AttributeName: segment
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: stream-segments-index
+          KeySchema:
+            - AttributeName: stream_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 25
+        WriteCapacityUnits: 25
+
+  ClipTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ts-clips
+      AttributeDefinitions:
+        - AttributeName: clip_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: clip_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  ClipSegmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ts-clip-segments
+      AttributeDefinitions:
+        - AttributeName: clip_id
+          AttributeType: S
+        - AttributeName: segment
+          AttributeType: N
+      KeySchema:
+        - AttributeName: clip_id
+          KeyType: HASH
+        - AttributeName: segment
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: clip-segments-index
+          KeySchema:
+            - AttributeName: clip_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  MontageTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ts-montages
+      AttributeDefinitions:
+        - AttributeName: montage_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: montage_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  MontageClipsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ts-montage-clips
+      AttributeDefinitions:
+        - AttributeName: montage_id
+          AttributeType: S
+        - AttributeName: clip_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: montage_id
+          KeyType: HASH
+        - AttributeName: clip_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: montage-clips-index
+          KeySchema:
+            - AttributeName: montage_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
