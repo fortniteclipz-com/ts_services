@@ -1,4 +1,4 @@
-twitch_stitch_root="/Users/atom-sachin/codey/twitch_stitch"
+twitch_stitch_shared="/Users/atom-sachin/codey/twitch_stitch/shared"
 
 function bootstrap() {
     echo "\nbootstrappin $2"
@@ -10,13 +10,13 @@ function bootstrap() {
     source venv/bin/activate
     pip3 install --process-dependency-links -r requirements.txt
 
-    cd $twitch_stitch_root
-    pip3 install --process-dependency-links -e ./ts_shared/ts_aws
-    pip3 install --process-dependency-links -e ./ts_shared/ts_config
-    pip3 install --process-dependency-links -e ./ts_shared/ts_file
-    pip3 install --process-dependency-links -e ./ts_shared/ts_http
-    pip3 install --process-dependency-links -e ./ts_shared/ts_logger
-    pip3 install --process-dependency-links -e ./ts_shared/ts_media
+    cd $twitch_stitch_shared
+    pip3 install --process-dependency-links -e ./ts_aws
+    pip3 install --process-dependency-links -e ./ts_config
+    pip3 install --process-dependency-links -e ./ts_file
+    pip3 install --process-dependency-links -e ./ts_http
+    pip3 install --process-dependency-links -e ./ts_logger
+    pip3 install --process-dependency-links -e ./ts_media
 
     echo "done bootstrappin $2\n"
 }
