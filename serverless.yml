@@ -23,7 +23,7 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:BatchGetItem
         - dynamodb:BatchWriteItem
-      Resource: arn:aws:dynamodb:us-west-1:*:*
+      Resource: arn:aws:dynamodb:us-west-1:589344262905:*
     - Effect: Allow
       Action:
         - s3:PutObject
@@ -35,7 +35,7 @@ provider:
         - sqs:SendMessage
         - sqs:ReceiveMessage
         - sqs:DeleteMessage
-      Resource: arn:aws:sqs:us-west-1:*:*
+      Resource: arn:aws:sqs:us-west-1:589344262905:*
 
 package:
   individually: true

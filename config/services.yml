@@ -4,10 +4,7 @@ service-clip:
   timeout: 30
   events:
     - sqs:
-        arn:
-          Fn::GetAtt:
-            - ClipQueue
-            - Arn
+        arn: arn:aws:sqs:us-west-1:589344262905:ts-clip
         batchSize: 1
   package:
     include:
@@ -21,10 +18,7 @@ service-montage:
   timeout: 30
   events:
     - sqs:
-        arn:
-          Fn::GetAtt:
-            - MontageQueue
-            - Arn
+        arn: arn:aws:sqs:us-west-1:589344262905:ts-montage
         batchSize: 1
   package:
     include:
@@ -37,10 +31,7 @@ service-stream-segment:
   timeout: 180
   events:
     - sqs:
-        arn:
-          Fn::GetAtt:
-            - StreamSegmentQueue
-            - Arn
+        arn: arn:aws:sqs:us-west-1:589344262905:ts-stream-segment
         batchSize: 1
   package:
     include:
