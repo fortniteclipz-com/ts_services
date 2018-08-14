@@ -1,15 +1,9 @@
 {
-  "name": "lambdas",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "dependencies": {},
+  "name": "ts_service",
+  "version": "1.0",
   "devDependencies": {
     "serverless-python-requirements": "github:sachinahj/ts-serverless-python-requirements#master"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
+  "author": "Ahuja",
   "license": "ISC"
 }
