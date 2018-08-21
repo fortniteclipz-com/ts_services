@@ -12,9 +12,9 @@ service-clip:
       - modules/clip/helpers.py
       - libs/ffprobe
 
-service-stream-segment:
+service-stream-segment-download:
   handler: run.run
-  module: modules/stream_segment
+  module: modules/stream_segment_download
   memorySize: 1024
   timeout: 180
   events:
@@ -23,7 +23,7 @@ service-stream-segment:
         batchSize: 1
   package:
     include:
-      - modules/stream_segment/run.py
+      - modules/stream_segment_download/run.py
       - libs/ffmpeg
       - libs/ffprobe
 
