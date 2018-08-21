@@ -1,12 +1,27 @@
 import run
 import json
 
-data = {
-	'stream_id': 296105488,
-	'segment': 654,
-	'fresh': False,
-}
-event = {'Records': [{'body': json.dumps(data)}]}
-run.run(event, {})
+datas = [{
+    'stream_id': 285219394,
+    'segment': 0,
+    'fresh': True,
+}, {
+    'stream_id': 285219394,
+    'segment': 1,
+    'fresh': False,
+}, {
+    'stream_id': 285219394,
+    'segment': 2,
+    'fresh': False,
+}, {
+    'stream_id': 285219394,
+    'segment': 3,
+    'fresh': False,
+}]
+
+
+for data in datas:
+    event = {'Records': [{'body': json.dumps(data)}]}
+    run.run(event, {})
 
 # {"Records": [{"body": "{\"stream_id\":285219394,\"segment\":0,\"fresh\":true}"}]}

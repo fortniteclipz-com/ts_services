@@ -1,4 +1,4 @@
-import ts_aws.dynamodb.stream
+import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_file
 import ts_http
@@ -21,7 +21,7 @@ def run(event, context):
     fresh = body['fresh']
 
     # get stream_segment from dynamodb
-    ss = ts_aws.dynamodb.stream.get_stream_segment(stream_id, segment)
+    ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
     logger.info("stream_segment", stream_segment=ss.__dict__)
 
     # check if stream_segment is processed raw/fresh else do nothing
@@ -96,7 +96,7 @@ def run(event, context):
         ts_file.delete(media_filename_video)
 
         logger.info("updating db")
-        ts_aws.dynamodb.stream.save_stream_segment(ss)
+        ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
     else:
         logger.warn("already downloaded")
 
