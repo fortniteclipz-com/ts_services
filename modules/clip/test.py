@@ -2,7 +2,7 @@ import run
 import json
 
 data = {
-	'clip_id': 'c-tmxMj4rHSBtuJrhB7xTGr9',
+	'clip_id': 'c-HyZyL7cQtsDyjcBrdrRkKU',
 }
 event = {'Records': [{'body': json.dumps(data)}]}
 run.run(event, {})

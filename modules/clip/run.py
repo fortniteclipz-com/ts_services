@@ -1,5 +1,7 @@
 import ts_aws.dynamodb.clip
+import ts_aws.dynamodb.clip_segment
 import ts_aws.dynamodb.stream
+import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_aws.sqs
 import ts_config
@@ -22,23 +24,25 @@ def run(event, context):
 
     # get clip
     clip = ts_aws.dynamodb.clip.get_clip(clip_id)
+    if clip is None:
+        raise Exception(f"No clip with clip_id {clip_id}")
     logger.set(clip=clip.__dict__)
 
     # init/get stream and stream segments
     logger.info("checking stream and stream_segments")
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-    stream_segments = ts_aws.dynamodb.stream.get_stream_segments(clip.stream_id)
+    stream_segments = ts_aws.dynamodb.stream_segment.get_stream_segments(clip.stream_id)
     if not stream.is_init() or len(stream_segments) == 0:
         logger.info("init stream and stream_segments")
         (stream, stream_segments) = ts_twitch.initialize_stream(clip.stream_id)
-        stream = ts_aws.dynamodb.stream.save_stream(stream)
-        stream_segments = ts_aws.dynamodb.stream.save_stream_segments(stream_segments)
+        ts_aws.dynamodb.stream.save_stream(stream)
+        ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
     logger.info("stream", stream=stream.__dict__)
     logger.info("stream_segments", stream_segments_length=len(stream_segments))
 
     # init/get clip segments
     logger.info("checking clip_segments")
-    clip_segments = ts_aws.dynamodb.clip.get_clip_segments(clip.clip_id)
+    clip_segments = ts_aws.dynamodb.clip_segment.get_clip_segments(clip.clip_id)
     if len(clip_segments) == 0:
         logger.info("init clip_segments")
         clip_segments = []
@@ -46,7 +50,7 @@ def run(event, context):
         clip_time_out_offset = clip.time_out + stream.time_offset
         for ss in stream_segments:
             if ss.time_in <= clip_time_out_offset and ss.time_out >= clip_time_in_offset:
-                cs = ts_aws.dynamodb.clip.ClipSegment(
+                cs = ts_aws.dynamodb.clip_segment.ClipSegment(
                     clip_id=clip.clip_id,
                     segment=ss.segment,
                 )
@@ -62,7 +66,6 @@ def run(event, context):
         is_first_cs = True if i_cs == 0 else False
 
         if not ss.is_init_raw() or (is_first_cs and not ss.is_init_fresh()):
-            logger.info("stream_segment needs ingesting", segment=ss.segment)
             ready_to_clip = False
             payload = {
                 'stream_id': ss.stream_id,
@@ -140,7 +143,7 @@ def run(event, context):
 
     # save clips segments to dynamodb
     logger.info("saving clip_segments")
-    clip_segments = ts_aws.dynamodb.clip.save_clip_segments(clip_segments)
+    ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
 
     if not ready_to_clip:
         logger.error("clip_segments not ready to clip")
@@ -166,7 +169,7 @@ def run(event, context):
     clip.key_playlist_master = m3u8_key_master
     clip.key_playlist_video = m3u8_key_video
     clip.key_playlist_audio = m3u8_key_audio
-    clip = ts_aws.dynamodb.clip.save_clip(clip)
+    ts_aws.dynamodb.clip.save_clip(clip)
 
     logger.info("done")
     return True

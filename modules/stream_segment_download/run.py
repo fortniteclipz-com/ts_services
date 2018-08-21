@@ -96,7 +96,7 @@ def run(event, context):
         ts_file.delete(media_filename_video)
 
         logger.info("updating db")
-        ss = ts_aws.dynamodb.stream.save_stream_segment(ss)
+        ts_aws.dynamodb.stream.save_stream_segment(ss)
     else:
         logger.warn("already downloaded")
 
