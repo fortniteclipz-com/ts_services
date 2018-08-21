@@ -12,18 +12,6 @@ service-clip:
       - modules/clip/helpers.py
       - libs/ffprobe
 
-service-montage:
-  handler: run.run
-  module: modules/montage
-  timeout: 30
-  events:
-    - sqs:
-        arn: arn:aws:sqs:us-west-1:589344262905:ts-montage
-        batchSize: 1
-  package:
-    include:
-      - modules/montage/run.py
-
 service-stream-segment:
   handler: run.run
   module: modules/stream_segment
