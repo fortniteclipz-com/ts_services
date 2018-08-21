@@ -6,7 +6,7 @@ provider:
   profile: serverless-admin
   region: us-west-1
   runtime: python3.6
-  stackName: twitch-stitch.service
+  stackName: sls-twitch-stitch-service
   stage: dev
   timeout: 30
   versionFunctions: false
