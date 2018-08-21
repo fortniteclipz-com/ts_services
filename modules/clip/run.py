@@ -6,6 +6,7 @@ import ts_config
 import ts_file
 import ts_logger
 import ts_media
+import ts_twitch
 import helpers
 
 import json
@@ -29,7 +30,7 @@ def run(event, context):
     stream_segments = ts_aws.dynamodb.stream.get_stream_segments(clip.stream_id)
     if not stream.is_init() or len(stream_segments) == 0:
         logger.info("init stream and stream_segments")
-        (stream, stream_segments) = helpers.init_stream(clip.stream_id)
+        (stream, stream_segments) = ts_twitch.initialize_stream(clip.stream_id)
         stream = ts_aws.dynamodb.stream.save_stream(stream)
         stream_segments = ts_aws.dynamodb.stream.save_stream_segments(stream_segments)
     logger.info("stream", stream=stream.__dict__)
@@ -40,7 +41,16 @@ def run(event, context):
     clip_segments = ts_aws.dynamodb.clip.get_clip_segments(clip.clip_id)
     if len(clip_segments) == 0:
         logger.info("init clip_segments")
-        clip_segments = helpers.init_clip_segments(clip, stream, stream_segments)
+        clip_segments = []
+        clip_time_in_offset = clip.time_in + stream.time_offset
+        clip_time_out_offset = clip.time_out + stream.time_offset
+        for ss in stream_segments:
+            if ss.time_in <= clip_time_out_offset and ss.time_out >= clip_time_in_offset:
+                cs = ts_aws.dynamodb.clip.ClipSegment(
+                    clip_id=clip.clip_id,
+                    segment=ss.segment,
+                )
+                clip_segments.append(cs)
     logger.info("clip_segments", in_segment=clip_segments[0].segment, out_segment=clip_segments[len(clip_segments) - 1].segment)
 
     # update clip segments
