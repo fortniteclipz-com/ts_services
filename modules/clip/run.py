@@ -1,3 +1,4 @@
+import ts_aws.dynamodb
 import ts_aws.dynamodb.clip
 import ts_aws.dynamodb.clip_segment
 import ts_aws.dynamodb.stream
@@ -83,23 +84,23 @@ def run(event, context):
         bucket = ts_config.get('aws.s3.main.name')
         region = ts_config.get('aws.s3.main.region')
         url_media_prefix = F"https://s3-{region}.amazonaws.com/{bucket}"
-        video_url_media = ss.key_media_video_fresh if is_first_cs else ss.key_media_video
+        video_url_media = css.key_media_video_fresh if is_first_cs else css.key_media_video
         cs.video_url_media = f"{url_media_prefix}/{video_url_media}"
-        cs.audio_url_media = f"{url_media_prefix}/{ss.key_media_audio}"
+        cs.audio_url_media = f"{url_media_prefix}/{css.key_media_audio}"
 
         if is_first_cs is False and is_last_cs is False:
-            cs.video_time_in = ss.time_in
-            cs.video_time_out = ss.time_out
-            cs.video_time_duration = ss.time_duration
-            cs.audio_time_in = ss.time_in
-            cs.audio_time_out = ss.time_out
-            cs.audio_time_duration = ss.time_duration
+            cs.video_time_in = css.time_in
+            cs.video_time_out = css.time_out
+            cs.video_time_duration = css.time_duration
+            cs.audio_time_in = css.time_in
+            cs.audio_time_out = css.time_out
+            cs.audio_time_duration = css.time_duration
         else:
-            packets_filename_video = f"/tmp/{ss.padded}_video.json"
-            packets_filename_audio = f"/tmp/{ss.padded}_audio.json"
-            packets_key_video = ss.key_packets_video_fresh if is_first_cs else ss.key_packets_video
+            packets_filename_video = f"/tmp/{css.padded}_video.json"
+            packets_filename_audio = f"/tmp/{css.padded}_audio.json"
+            packets_key_video = css.key_packets_video_fresh if is_first_cs else css.key_packets_video
             ts_aws.s3.download_file(packets_key_video, packets_filename_video)
-            ts_aws.s3.download_file(ss.key_packets_audio, packets_filename_audio)
+            ts_aws.s3.download_file(css.key_packets_audio, packets_filename_audio)
 
             packets_video = ts_file.get_json(packets_filename_video)['packets']
             packets_audio = ts_file.get_json(packets_filename_audio)['packets']
@@ -160,7 +161,7 @@ def run(event, context):
     clip.key_playlist_master = m3u8_key_master
     clip.key_playlist_video = m3u8_key_video
     clip.key_playlist_audio = m3u8_key_audio
-    clip._status = ts_aws.dynamodb.clip.ClipStatus.READY
+    clip._status = ts_aws.dynamodb.Status.READY
     ts_aws.dynamodb.clip.save_clip(clip)
     ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
 
