@@ -26,128 +26,118 @@ def run(event, context):
     clip = ts_aws.dynamodb.clip.get_clip(clip_id)
     if clip is None:
         raise Exception(f"No clip with clip_id {clip_id}")
-    logger.set(clip=clip.__dict__)
+    logger.info("clip", clip=clip.__dict__)
 
     # init/get stream and stream segments
-    logger.info("checking stream and stream_segments")
+    logger.info("checking stream")
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-    stream_segments = ts_aws.dynamodb.stream_segment.get_stream_segments(clip.stream_id)
-    if not stream.is_init() or len(stream_segments) == 0:
+    if stream is None:
         logger.info("init stream and stream_segments")
         (stream, stream_segments) = ts_twitch.initialize_stream(clip.stream_id)
         ts_aws.dynamodb.stream.save_stream(stream)
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
+        logger.info("stream_segments", stream_segments_length=len(stream_segments))
+
     logger.info("stream", stream=stream.__dict__)
-    logger.info("stream_segments", stream_segments_length=len(stream_segments))
+    logger.info("get clip_stream_segments")
+    clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
+    logger.info("clip_stream_segments", clip_stream_segments_length=len(clip_stream_segments))
 
-    # init/get clip segments
-    logger.info("checking clip_segments")
-    clip_segments = ts_aws.dynamodb.clip_segment.get_clip_segments(clip.clip_id)
-    if len(clip_segments) == 0:
-        logger.info("init clip_segments")
-        clip_segments = []
-        clip_time_in_offset = clip.time_in + stream.time_offset
-        clip_time_out_offset = clip.time_out + stream.time_offset
-        for ss in stream_segments:
-            if ss.time_in <= clip_time_out_offset and ss.time_out >= clip_time_in_offset:
-                cs = ts_aws.dynamodb.clip_segment.ClipSegment(
-                    clip_id=clip.clip_id,
-                    segment=ss.segment,
-                )
-                clip_segments.append(cs)
-    logger.info("clip_segments", in_segment=clip_segments[0].segment, out_segment=clip_segments[len(clip_segments) - 1].segment)
-
-    # update clip segments
-    logger.info("ingesting clip_semgents")
+    # check if all stream segmeents are ready to process
     ready_to_clip = True
-    i_ss = next((i for i, ss in enumerate(stream_segments) if ss.segment == clip_segments[0].segment), -1)
-    for i_cs, cs in enumerate(clip_segments):
-        ss = stream_segments[i_ss + i_cs]
-        is_first_cs = True if i_cs == 0 else False
-
-        if not ss.is_init_raw() or (is_first_cs and not ss.is_init_fresh()):
+    stream_segments_to_update = []
+    for i, css in enumerate(clip_stream_segments):
+        _status = ts_aws.dynamodb.stream_segment.StreamSegmentStatus.FRESHED if i == 0 else ts_aws.dynamodb.stream_segment.StreamSegmentStatus.DOWNLOADED
+        _status_queue = ts_aws.dynamodb.stream_segment.StreamSegmentStatus.FRESHING if i == 0 else ts_aws.dynamodb.stream_segment.StreamSegmentStatus.DOWNLOADING
+        if css._status < _status:
             ready_to_clip = False
+        if css._status < _status_queue:
             payload = {
-                'stream_id': ss.stream_id,
-                'segment': ss.segment,
-                'fresh': is_first_cs,
+                'stream_id': css.stream_id,
+                'segment': css.segment,
+                'fresh': True if i == 0 else False,
             }
             logger.info("pushing to stream_download sqs", payload=payload)
             ts_aws.sqs.send_stream_download(payload)
+            css._status = _status_queue
+            stream_segments_to_update.append(css)
 
-        elif cs.is_init():
-            logger.info("clip_semgent already ingested", segment=cs.segment)
-            continue
-
-        else:
-            logger.info("ingesting clip_semgent", segment=cs.segment)
-            is_last_cs = True if i_cs == (len(clip_segments) - 1) else False
-
-            bucket = ts_config.get('aws.s3.main.name')
-            region = ts_config.get('aws.s3.main.region')
-            url_media_prefix = F"https://s3-{region}.amazonaws.com/{bucket}"
-            video_url_media = ss.key_media_video_fresh if is_first_cs else ss.key_media_video
-            cs.video_url_media = f"{url_media_prefix}/{video_url_media}"
-            cs.audio_url_media = f"{url_media_prefix}/{ss.key_media_audio}"
-
-            if is_first_cs is False and is_last_cs is False:
-                cs.video_time_in = ss.time_in
-                cs.video_time_out = ss.time_out
-                cs.video_time_duration = ss.time_duration
-                cs.audio_time_in = ss.time_in
-                cs.audio_time_out = ss.time_out
-                cs.audio_time_duration = ss.time_duration
-            else:
-                packets_filename_video = f"/tmp/{ss.padded}_video.json"
-                packets_filename_audio = f"/tmp/{ss.padded}_audio.json"
-                packets_key_video = ss.key_packets_video_fresh if is_first_cs else ss.key_packets_video
-                ts_aws.s3.download_file(packets_key_video, packets_filename_video)
-                ts_aws.s3.download_file(ss.key_packets_audio, packets_filename_audio)
-
-                packets_video = ts_file.get_json(packets_filename_video)['packets']
-                packets_audio = ts_file.get_json(packets_filename_audio)['packets']
-                clip_time_in_offset = clip.time_in + stream.time_offset
-                clip_time_out_offset = clip.time_out + stream.time_offset
-                (
-                    cs.video_time_duration,
-                    cs.video_time_in,
-                    cs.video_time_out,
-                    cs.video_packets_pos,
-                    cs.video_packets_byterange,
-                ) = helpers.get_packets_data(
-                    packets_video,
-                    is_first_cs,
-                    is_last_cs,
-                    clip_time_in_offset,
-                    clip_time_out_offset,
-                )
-                (
-                    cs.audio_time_duration,
-                    cs.audio_time_in,
-                    cs.audio_time_out,
-                    audio_packets_pos,
-                    audio_packets_byterange,
-                ) = helpers.get_packets_data(
-                    packets_audio,
-                    is_first_cs,
-                    is_last_cs,
-                    cs.video_time_in,
-                    cs.video_time_out,
-                )
-                if is_last_cs:
-                    cs.audio_packets_pos = audio_packets_pos
-                    cs.audio_packets_byterange = audio_packets_byterange
-
-                ts_file.delete(packets_filename_video)
-                ts_file.delete(packets_filename_audio)
-
-    # save clips segments to dynamodb
-    logger.info("saving clip_segments")
-    ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
-
+    ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
-        logger.error("clip_segments not ready to clip")
+        logger.error("Not all clip segments processed yet")
         raise Exception("Not all clip segments processed yet")
+
+    # update clip segments
+    logger.info("creating clip_segments")
+    clip_segments = []
+    for i, css in enumerate(clip_stream_segments):
+        logger.info("ingesting clip_segment", segment=css.segment)
+        cs = ts_aws.dynamodb.clip_segment.ClipSegment(
+            clip_id=clip.clip_id,
+            segment=css.segment,
+        )
+        is_first_cs = True if i == 0 else False
+        is_last_cs = True if i == (len(clip_segments) - 1) else False
+
+        bucket = ts_config.get('aws.s3.main.name')
+        region = ts_config.get('aws.s3.main.region')
+        url_media_prefix = F"https://s3-{region}.amazonaws.com/{bucket}"
+        video_url_media = ss.key_media_video_fresh if is_first_cs else ss.key_media_video
+        cs.video_url_media = f"{url_media_prefix}/{video_url_media}"
+        cs.audio_url_media = f"{url_media_prefix}/{ss.key_media_audio}"
+
+        if is_first_cs is False and is_last_cs is False:
+            cs.video_time_in = ss.time_in
+            cs.video_time_out = ss.time_out
+            cs.video_time_duration = ss.time_duration
+            cs.audio_time_in = ss.time_in
+            cs.audio_time_out = ss.time_out
+            cs.audio_time_duration = ss.time_duration
+        else:
+            packets_filename_video = f"/tmp/{ss.padded}_video.json"
+            packets_filename_audio = f"/tmp/{ss.padded}_audio.json"
+            packets_key_video = ss.key_packets_video_fresh if is_first_cs else ss.key_packets_video
+            ts_aws.s3.download_file(packets_key_video, packets_filename_video)
+            ts_aws.s3.download_file(ss.key_packets_audio, packets_filename_audio)
+
+            packets_video = ts_file.get_json(packets_filename_video)['packets']
+            packets_audio = ts_file.get_json(packets_filename_audio)['packets']
+            clip_time_in_offset = clip.time_in + stream.time_offset
+            clip_time_out_offset = clip.time_out + stream.time_offset
+            (
+                cs.video_time_duration,
+                cs.video_time_in,
+                cs.video_time_out,
+                cs.video_packets_pos,
+                cs.video_packets_byterange,
+            ) = helpers.get_packets_data(
+                packets_video,
+                is_first_cs,
+                is_last_cs,
+                clip_time_in_offset,
+                clip_time_out_offset,
+            )
+            (
+                cs.audio_time_duration,
+                cs.audio_time_in,
+                cs.audio_time_out,
+                audio_packets_pos,
+                audio_packets_byterange,
+            ) = helpers.get_packets_data(
+                packets_audio,
+                is_first_cs,
+                is_last_cs,
+                cs.video_time_in,
+                cs.video_time_out,
+            )
+            if is_last_cs:
+                cs.audio_packets_pos = audio_packets_pos
+                cs.audio_packets_byterange = audio_packets_byterange
+
+            ts_file.delete(packets_filename_video)
+            ts_file.delete(packets_filename_audio)
+
+        clip_segments.append(cs)
 
     # creating/uploading m3u8
     logger.info("creating/uploading m3u8")
@@ -165,11 +155,13 @@ def run(event, context):
     ts_file.delete(m3u8_filename_video)
     ts_file.delete(m3u8_filename_audio)
 
-    logger.info("saving clip")
+    logger.info("saving clip and clip_segments")
     clip.key_playlist_master = m3u8_key_master
     clip.key_playlist_video = m3u8_key_video
     clip.key_playlist_audio = m3u8_key_audio
     ts_aws.dynamodb.clip.save_clip(clip)
+    ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
+
 
     logger.info("done")
     return True
