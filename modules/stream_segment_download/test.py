@@ -3,19 +3,15 @@ import json
 
 datas = [{
     'stream_id': 285219394,
-    'segment': 0,
+    'segment': 12,
     'fresh': True,
 }, {
     'stream_id': 285219394,
-    'segment': 1,
+    'segment': 13,
     'fresh': False,
 }, {
     'stream_id': 285219394,
-    'segment': 2,
-    'fresh': False,
-}, {
-    'stream_id': 285219394,
-    'segment': 3,
+    'segment': 14,
     'fresh': False,
 }]
 

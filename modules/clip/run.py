@@ -47,19 +47,20 @@ def run(event, context):
     ready_to_clip = True
     stream_segments_to_update = []
     for i, css in enumerate(clip_stream_segments):
-        _status = ts_aws.dynamodb.stream_segment.StreamSegmentStatus.FRESHED if i == 0 else ts_aws.dynamodb.stream_segment.StreamSegmentStatus.DOWNLOADED
-        _status_queue = ts_aws.dynamodb.stream_segment.StreamSegmentStatus.FRESHING if i == 0 else ts_aws.dynamodb.stream_segment.StreamSegmentStatus.DOWNLOADING
-        if css._status < _status:
+        is_first_cs = True if i == 0 else False
+        _status = css._status_fresh if i == 0 else css._status_download
+        if _status < ts_aws.dynamodb.Status.READY:
             ready_to_clip = False
-        if css._status < _status_queue:
+        if _status < ts_aws.dynamodb.Status.INITIALIZING:
             payload = {
                 'stream_id': css.stream_id,
                 'segment': css.segment,
-                'fresh': True if i == 0 else False,
+                'fresh': True if is_first_cs else False,
             }
             logger.info("pushing to stream_download sqs", payload=payload)
             ts_aws.sqs.send_stream_download(payload)
-            css._status = _status_queue
+            css._status_download = ts_aws.dynamodb.Status.INITIALIZING
+            css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING if is_first_cs else css._status_fresh
             stream_segments_to_update.append(css)
 
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
@@ -159,6 +160,7 @@ def run(event, context):
     clip.key_playlist_master = m3u8_key_master
     clip.key_playlist_video = m3u8_key_video
     clip.key_playlist_audio = m3u8_key_audio
+    clip._status = ts_aws.dynamodb.clip.ClipStatus.READY
     ts_aws.dynamodb.clip.save_clip(clip)
     ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
 
