@@ -29,8 +29,6 @@ def run(event, context):
     # get raw m3u8 url from twitch stream url
     twitch_stream_url = f"https://twitch.tv/videos/{stream_id}"
     twitch_streams = streamlink.streams(twitch_stream_url)
-    if 'best' not in twitch_streams:
-        return (None, None)
     twitch_stream = twitch_streams['best']
     twitch_stream_url_prefix = "/".join(twitch_stream.url.split("/")[:-1])
 
