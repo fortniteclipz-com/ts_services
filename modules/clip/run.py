@@ -48,7 +48,7 @@ def run(event, context):
     ready_to_clip = True
     stream_segments_to_update = []
     for i, css in enumerate(clip_stream_segments):
-        is_first_cs = True if i == 0 else False
+        is_first_css = True if i == 0 else False
         _status = css._status_fresh if i == 0 else css._status_download
         if _status < ts_aws.dynamodb.Status.READY:
             ready_to_clip = False
@@ -56,12 +56,12 @@ def run(event, context):
             payload = {
                 'stream_id': css.stream_id,
                 'segment': css.segment,
-                'fresh': True if is_first_cs else False,
+                'fresh': True if is_first_css else False,
             }
             logger.info("pushing to stream_download sqs", payload=payload)
             ts_aws.sqs.send_stream_download(payload)
             css._status_download = ts_aws.dynamodb.Status.INITIALIZING
-            css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING if is_first_cs else css._status_fresh
+            css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING if is_first_css else css._status_fresh
             stream_segments_to_update.append(css)
 
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
@@ -74,12 +74,12 @@ def run(event, context):
     clip_segments = []
     for i, css in enumerate(clip_stream_segments):
         logger.info("ingesting clip_segment", segment=css.segment)
+        is_first_cs = True if i == 0 else False
+        is_last_cs = True if i == (len(clip_stream_segments) - 1) else False
         cs = ts_aws.dynamodb.clip_segment.ClipSegment(
             clip_id=clip.clip_id,
             segment=css.segment,
         )
-        is_first_cs = True if i == 0 else False
-        is_last_cs = True if i == (len(clip_segments) - 1) else False
 
         bucket = ts_config.get('aws.s3.main.name')
         region = ts_config.get('aws.s3.main.region')

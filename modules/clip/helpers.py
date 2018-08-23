@@ -9,7 +9,7 @@ def get_packets_data(packets, is_first_cs, is_last_cs, time_in, time_out):
         if "K" in packet['flags']:
             last_keyframe_index = index
         if packet_start_index is None:
-            if (is_first_cs and time_in <= pts_time) or is_last_cs:
+            if (is_first_cs and time_in <= pts_time) or (not is_first_cs and is_last_cs):
                 packet_start_index = last_keyframe_index
         if packet_end_index is None:
             if time_out <= pts_time:
