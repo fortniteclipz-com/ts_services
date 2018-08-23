@@ -27,9 +27,14 @@ def run(event, context):
     clip = ts_aws.dynamodb.clip.get_clip(clip_id)
     if clip is None:
         raise Exception(f"No clip with clip_id {clip_id}")
-    logger.info("clip", clip=clip.__dict__)
 
-    # init/get stream and stream segments
+    # check if clip already ready
+    logger.info("clip", clip=clip.__dict__)
+    if clip._status >= ts_aws.dynamodb.Status.READY:
+        logger.warn(f"Already processed clip with clip_id {clip_id}")
+        return
+
+    # init/get stream and stream_segments
     logger.info("checking stream")
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
     if stream is None:
@@ -39,12 +44,13 @@ def run(event, context):
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
         logger.info("stream_segments", stream_segments_length=len(stream_segments))
 
+    # get clip_stream_segments
     logger.info("stream", stream=stream.__dict__)
     logger.info("get clip_stream_segments")
     clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
     logger.info("clip_stream_segments", clip_stream_segments_length=len(clip_stream_segments))
 
-    # check if all stream segmeents are ready to process
+    # check if all stream_segments are ready to process
     ready_to_clip = True
     stream_segments_to_update = []
     for i, css in enumerate(clip_stream_segments):
@@ -64,9 +70,9 @@ def run(event, context):
             css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING if is_first_css else css._status_fresh
             stream_segments_to_update.append(css)
 
+    # update queue status of stream_segments
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
-        logger.error("Not all clip segments processed yet")
         raise Exception("Not all clip segments processed yet")
 
     # update clip segments
