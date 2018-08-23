@@ -52,7 +52,7 @@ def run(event, context):
             )
             ts_aws.dynamodb.stream.save_stream(stream)
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
-        raise Exception("Stream not initialized yet")
+        raise Exception("stream not ready")
 
     logger.info("stream", stream=stream.__dict__)
 
@@ -92,7 +92,7 @@ def run(event, context):
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
-        raise Exception("Not all stream_segments processed yet")
+        raise Exception("stream_segments not ready")
 
     # update clip segments
     logger.info("creating clip_segments")
