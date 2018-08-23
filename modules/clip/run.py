@@ -64,6 +64,7 @@ def run(event, context):
             download = True
             css._status_download = ts_aws.dynamodb.Status.INITIALIZING
         if download:
+            ready_to_clip = False
             payload = {
                 'stream_id': css.stream_id,
                 'segment': css.segment,
