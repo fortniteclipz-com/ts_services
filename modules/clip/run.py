@@ -26,7 +26,8 @@ def run(event, context):
     # get clip
     clip = ts_aws.dynamodb.clip.get_clip(clip_id)
     if clip is None:
-        raise Exception(f"No clip with clip_id {clip_id}")
+        logger.error(f"No clip with clip_id {clip_id}")
+        return
 
     # check if clip already ready
     logger.info("clip", clip=clip.__dict__)
@@ -65,7 +66,7 @@ def run(event, context):
                 'fresh': True if is_first_css else False,
             }
             logger.info("pushing to stream_download sqs", payload=payload)
-            ts_aws.sqs.send_stream_download(payload)
+            ts_aws.sqs.send_stream_segment_download(payload)
             css._status_download = ts_aws.dynamodb.Status.INITIALIZING
             css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING if is_first_css else css._status_fresh
             stream_segments_to_update.append(css)
@@ -73,6 +74,8 @@ def run(event, context):
     # update queue status of stream_segments
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
+        receipt_handle = json.loads(event['Records'][0]['receipt_handle'])
+        ts_aws.sqs.update_timeout_clip(receipt_handle)
         raise Exception("Not all clip segments processed yet")
 
     # update clip segments
