@@ -31,8 +31,8 @@ def run(event, context):
 
     # check if clip already ready
     logger.info("clip", clip=clip.__dict__)
-    if clip._status >= ts_aws.dynamodb.Status.READY:
-        logger.warn(f"Already processed clip with clip_id {clip_id}")
+    if clip._status == ts_aws.dynamodb.Status.READY and False:
+        logger.warn(f"Already processed clip", clip=clip)
         return
 
     # init/get stream and stream_segments
@@ -55,20 +55,21 @@ def run(event, context):
     ready_to_clip = True
     stream_segments_to_update = []
     for i, css in enumerate(clip_stream_segments):
+        download = False
         is_first_css = True if i == 0 else False
-        _status = css._status_fresh if i == 0 else css._status_download
-        if _status < ts_aws.dynamodb.Status.READY:
-            ready_to_clip = False
-        if _status < ts_aws.dynamodb.Status.INITIALIZING:
+        if is_first_cs && css._status_fresh == ts_aws.dynamodb.Status.NONE:
+            download = True
+            css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING
+        if css._status_download == ts_aws.dynamodb.Status.NONE:
+            download = True
+            css._status_download = ts_aws.dynamodb.Status.INITIALIZING
+        if download:
             payload = {
                 'stream_id': css.stream_id,
                 'segment': css.segment,
-                'fresh': True if is_first_css else False,
             }
             logger.info("pushing to stream_download sqs", payload=payload)
             ts_aws.sqs.send_stream_segment_download_message(payload)
-            css._status_download = ts_aws.dynamodb.Status.INITIALIZING
-            css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING if is_first_css else css._status_fresh
             stream_segments_to_update.append(css)
 
     # update queue status of stream_segments

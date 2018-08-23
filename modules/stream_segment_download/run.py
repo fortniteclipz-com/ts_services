@@ -17,7 +17,6 @@ def run(event, context):
     logger.info("body", body=body)
     stream_id = body['stream_id']
     segment = body['segment']
-    fresh = body['fresh']
 
     # get stream_segment from dynamodb
     ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
@@ -25,10 +24,14 @@ def run(event, context):
 
     media_filename_video = f"/tmp/{ss.padded}_video.ts"
     media_key_video = f"streams/{stream_id}/raw/video/{ss.padded}.ts"
-    process_raw = ss._status_download < ts_aws.dynamodb.Status.READY
-    process_fresh = fresh and ss._status_fresh < ts_aws.dynamodb.Status.READY
+    download_raw = ss._status_download == ts_aws.dynamodb.Status.INITIALIZING
+    download_fresh = ss._status_fresh == ts_aws.dynamodb.Status.INITIALIZING
 
-    if process_raw:
+    if not download_fresh or download_raw:
+        logger.warn(f"Already downloaded stream_segment", stream_segment=stream_segment)
+        return
+
+    if download_raw:
         logger.info("downloading and processing raw segment")
         media_filename = f"/tmp/{ss.padded}_raw.ts"
         media_filename_audio = f"/tmp/{ss.padded}_audio.ts"
@@ -60,12 +63,12 @@ def run(event, context):
         ts_file.delete(packets_filename_audio)
         ss._status_download = ts_aws.dynamodb.Status.READY
 
-    # process fresh segment if not processed
-    if process_fresh:
-        if not process_raw:
-            logger.info("getting raw segment from s3")
-            ts_aws.s3.download_file(media_key_video, media_filename_video)
+    else:
+        logger.info("getting raw segment from s3")
+        ts_aws.s3.download_file(media_key_video, media_filename_video)
 
+    # process fresh segment if not processed
+    if download_fresh:
         logger.info("freshing raw segment")
         media_filename_video_fresh = f"/tmp/{ss.padded}_video_fresh.ts"
         packets_filename_video_fresh = f"/tmp/{ss.padded}_video_fresh.json"
@@ -84,10 +87,7 @@ def run(event, context):
         ts_file.delete(packets_filename_video_fresh)
         ss._status_fresh = ts_aws.dynamodb.Status.READY
 
-    if process_raw or process_fresh:
-        ts_file.delete(media_filename_video)
-    else:
-        logger.warn("already downloaded")
+    ts_file.delete(media_filename_video)
 
     logger.info("saving stream_segment")
     ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
