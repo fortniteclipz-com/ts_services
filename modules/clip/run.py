@@ -39,18 +39,19 @@ def run(event, context):
     # init/get stream and stream_segments
     logger.info("checking stream")
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-    if stream is None or stream._status == ts_aws.:
-        payload = {
-            'stream_id': clip.stream_id,
-        }
-        logger.info("pushing to stream_initialize sqs", payload=payload)
-        ts_aws.sqs.stream_initialize.send_message(payload)
-
-        stream = ts_aws.dynamodb.stream.Stream(
-            stream_id=stream_id,
-            _status=ts_aws.dynamodb.Status.INITIALIZING
-        )
-        ts_aws.dynamodb.stream.save_stream(stream)
+    if stream is None or stream._status == ts_aws.dynamodb.Status.INITIALIZING:
+        if stream is None:
+            payload = {
+                'stream_id': clip.stream_id,
+            }
+            logger.info("pushing to stream_initialize sqs", payload=payload)
+            ts_aws.sqs.stream_initialize.send_message(payload)
+            stream = ts_aws.dynamodb.stream.Stream(
+                stream_id=clip.stream_id,
+                _status=ts_aws.dynamodb.Status.INITIALIZING
+            )
+            ts_aws.dynamodb.stream.save_stream(stream)
+        ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
         raise Exception("Stream not initialized yet")
 
     # get clip_stream_segments
@@ -84,8 +85,7 @@ def run(event, context):
     # update queue status of stream_segments
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
-        receipt_handle = event['Records'][0]['receiptHandle']
-        ts_aws.sqs.clip.change_visibility(receipt_handle)
+        ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
         raise Exception("Not all clip segments processed yet")
 
     # update clip segments
