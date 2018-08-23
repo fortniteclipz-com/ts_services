@@ -1,6 +1,7 @@
 service-clip:
   handler: run.run
   module: modules/clip
+  memorySize: 512
   timeout: 30
   events:
     - sqs:

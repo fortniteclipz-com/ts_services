@@ -2,13 +2,11 @@ service: twitch-stitch-service
 
 provider:
   name: aws
-  memorySize: 512
   profile: serverless-admin
   region: us-west-1
   runtime: python3.6
   stackName: sls-twitch-stitch-service
   stage: dev
-  timeout: 30
   versionFunctions: false
 
   iamRoleStatements:
