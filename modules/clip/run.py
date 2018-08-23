@@ -41,8 +41,8 @@ def run(event, context):
     if stream is None:
         logger.info("init stream and stream_segments")
         (stream, stream_segments) = ts_twitch.initialize_stream(clip.stream_id)
-        ts_aws.dynamodb.stream.save_stream(stream)
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
+        ts_aws.dynamodb.stream.save_stream(stream)
         logger.info("stream_segments", stream_segments_length=len(stream_segments))
 
     # get clip_stream_segments
