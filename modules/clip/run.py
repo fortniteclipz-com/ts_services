@@ -74,7 +74,7 @@ def run(event, context):
     # update queue status of stream_segments
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
-        receipt_handle = json.loads(event['Records'][0]['receipt_handle'])
+        receipt_handle = event['Records'][0]['receiptHandle']
         ts_aws.sqs.update_timeout_clip(receipt_handle)
         raise Exception("Not all clip segments processed yet")
 

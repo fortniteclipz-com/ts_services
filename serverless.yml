@@ -32,6 +32,7 @@ provider:
         - sqs:SendMessage
         - sqs:ReceiveMessage
         - sqs:DeleteMessage
+        - sqs:ChangeMessageVisibility
       Resource: arn:aws:sqs:us-west-1:589344262905:*
 
 package:
