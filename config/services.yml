@@ -13,6 +13,19 @@ service-clip:
       - modules/clip/helpers.py
       - libs/ffprobe
 
+service-stream-initialize:
+  handler: run.run
+  module: modules/stream_initialize
+  memorySize: 512
+  timeout: 300
+  events:
+    - sqs:
+        arn: arn:aws:sqs:us-west-1:589344262905:ts-stream-initialize
+        batchSize: 1
+  package:
+    include:
+      - modules/stream_initialize/run.py
+
 service-stream-segment-download:
   handler: run.run
   module: modules/stream_segment_download
