@@ -27,8 +27,8 @@ def run(event, context):
     download_raw = ss._status_download == ts_aws.dynamodb.Status.INITIALIZING
     download_fresh = ss._status_fresh == ts_aws.dynamodb.Status.INITIALIZING
 
-    if not download_fresh or download_raw:
-        logger.warn(f"Already downloaded stream_segment", stream_segment=stream_segment)
+    if not download_fresh and not download_raw:
+        logger.warn(f"Don't need to downloaded stream_segment", stream_segment=ss.__dict__)
         return
 
     if download_raw:

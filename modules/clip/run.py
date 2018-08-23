@@ -57,7 +57,7 @@ def run(event, context):
     for i, css in enumerate(clip_stream_segments):
         download = False
         is_first_css = True if i == 0 else False
-        if is_first_cs && css._status_fresh == ts_aws.dynamodb.Status.NONE:
+        if is_first_css and css._status_fresh == ts_aws.dynamodb.Status.NONE:
             download = True
             css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING
         if css._status_download == ts_aws.dynamodb.Status.NONE:
