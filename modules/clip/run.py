@@ -54,9 +54,9 @@ def run(event, context):
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
         raise Exception("Stream not initialized yet")
 
-    # get clip_stream_segments
     logger.info("stream", stream=stream.__dict__)
-    logger.info("get clip_stream_segments")
+
+    # get clip_stream_segments
     clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
     logger.info("clip_stream_segments", clip_stream_segments_length=len(clip_stream_segments))
 
@@ -66,14 +66,20 @@ def run(event, context):
     for i, css in enumerate(clip_stream_segments):
         download = False
         is_first_css = True if i == 0 else False
-        if is_first_css and css._status_fresh == ts_aws.dynamodb.Status.NONE:
-            download = True
-            css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING
-        if css._status_download == ts_aws.dynamodb.Status.NONE:
-            download = True
-            css._status_download = ts_aws.dynamodb.Status.INITIALIZING
-        if download:
+
+        if is_first_css and css._status_fresh <= ts_aws.dynamodb.Status.INITIALIZING:
             ready_to_clip = False
+            if css._status_fresh == ts_aws.dynamodb.Status.NONE:
+                download = True
+                css._status_fresh = ts_aws.dynamodb.Status.INITIALIZING
+
+        if css._status_download <= ts_aws.dynamodb.Status.INITIALIZING:
+            ready_to_clip = False
+            if css._status_download == ts_aws.dynamodb.Status.NONE:
+                download = True
+                css._status_download = ts_aws.dynamodb.Status.INITIALIZING
+
+        if download:
             payload = {
                 'stream_id': css.stream_id,
                 'segment': css.segment,
@@ -86,7 +92,7 @@ def run(event, context):
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
-        raise Exception("Not all clip segments processed yet")
+        raise Exception("Not all stream_segments processed yet")
 
     # update clip segments
     logger.info("creating clip_segments")
