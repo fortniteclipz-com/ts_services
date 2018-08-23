@@ -4,7 +4,8 @@ import ts_aws.dynamodb.clip_segment
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
-import ts_aws.sqs
+import ts_aws.sqs.clip
+import ts_aws.sqs.stream_segment_download
 import ts_config
 import ts_file
 import ts_logger
@@ -70,14 +71,14 @@ def run(event, context):
                 'segment': css.segment,
             }
             logger.info("pushing to stream_download sqs", payload=payload)
-            ts_aws.sqs.send_stream_segment_download_message(payload)
+            ts_aws.sqs.stream_segment_download.send_message(payload)
             stream_segments_to_update.append(css)
 
     # update queue status of stream_segments
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
         receipt_handle = event['Records'][0]['receiptHandle']
-        ts_aws.sqs.change_clip_visibility(receipt_handle)
+        ts_aws.sqs.clip.change_visibility(receipt_handle)
         raise Exception("Not all clip segments processed yet")
 
     # update clip segments
