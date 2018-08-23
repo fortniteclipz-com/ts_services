@@ -5,12 +5,12 @@ import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_aws.sqs.clip
+import ts_aws.sqs.stream_initialize
 import ts_aws.sqs.stream_segment_download
 import ts_config
 import ts_file
 import ts_logger
 import ts_media
-import ts_twitch
 import helpers
 
 import json
@@ -32,19 +32,26 @@ def run(event, context):
 
     # check if clip already ready
     logger.info("clip", clip=clip.__dict__)
-    if clip._status == ts_aws.dynamodb.Status.READY and False:
-        logger.warn(f"Already processed clip", clip=clip)
+    if clip._status == ts_aws.dynamodb.Status.READY:
+        logger.warn(f"Already processed clip")
         return
 
     # init/get stream and stream_segments
     logger.info("checking stream")
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-    if stream is None:
-        logger.info("init stream and stream_segments")
-        (stream, stream_segments) = ts_twitch.initialize_stream(clip.stream_id)
-        ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
+    if stream is None or stream._status == ts_aws.:
+        payload = {
+            'stream_id': clip.stream_id,
+        }
+        logger.info("pushing to stream_initialize sqs", payload=payload)
+        ts_aws.sqs.stream_initialize.send_message(payload)
+
+        stream = ts_aws.dynamodb.stream.Stream(
+            stream_id=stream_id,
+            _status=ts_aws.dynamodb.Status.INITIALIZING
+        )
         ts_aws.dynamodb.stream.save_stream(stream)
-        logger.info("stream_segments", stream_segments_length=len(stream_segments))
+        raise Exception("Stream not initialized yet")
 
     # get clip_stream_segments
     logger.info("stream", stream=stream.__dict__)
@@ -70,7 +77,7 @@ def run(event, context):
                 'stream_id': css.stream_id,
                 'segment': css.segment,
             }
-            logger.info("pushing to stream_download sqs", payload=payload)
+            logger.info("pushing to stream_segment_download sqs", payload=payload)
             ts_aws.sqs.stream_segment_download.send_message(payload)
             stream_segments_to_update.append(css)
 
