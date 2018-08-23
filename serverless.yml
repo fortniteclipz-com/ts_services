@@ -1,11 +1,10 @@
-service: twitch-stitch-service
+service: ts-service
 
 provider:
   name: aws
   profile: serverless-admin
   region: us-west-1
   runtime: python3.6
-  stackName: sls-twitch-stitch-service
   stage: dev
   versionFunctions: false
 
