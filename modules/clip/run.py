@@ -81,7 +81,6 @@ def run(event, context):
                 'segment': css.segment,
             })
 
-
     # update queue status of stream_segments
     if not ready_to_clip:
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
