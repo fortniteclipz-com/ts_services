@@ -1,10 +1,12 @@
-import ts_aws.dynamodb
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_file
 import ts_http
 import ts_logger
 import ts_media
+import ts_model.Status
+import ts_model.Stream
+import ts_model.StreamSegment
 
 import json
 import re
@@ -21,7 +23,7 @@ def run(event, context):
 
     # check stream already ready
     stream = ts_aws.dynamodb.stream.get_stream(stream_id)
-    if stream is not None and stream._status == ts_aws.dynamodb.Status.READY:
+    if stream is not None and stream._status == ts_model.Status.READY:
         logger.warn(f"Already processed stream")
         return
 
@@ -35,7 +37,7 @@ def run(event, context):
     playlist_filename = f"/tmp/playlist-raw.m3u8"
     ts_http.download_file(twitch_stream.url, playlist_filename)
     stream_segments = []
-    ss = ts_aws.dynamodb.stream_segment.StreamSegment()
+    ss = ts_model.StreamSegment()
     with open(playlist_filename, 'r') as f:
         for line in f:
             if "EXTINF" in line:
@@ -51,11 +53,11 @@ def run(event, context):
                 ss.padded = segment_padded
                 ss.url_media_raw = url_media_raw
             if ss.time_duration is not None and ss.segment is not None:
-                ss._status_download = ts_aws.dynamodb.Status.NONE
-                ss._status_fresh = ts_aws.dynamodb.Status.NONE
-                ss._status_analyze = ts_aws.dynamodb.Status.NONE
+                ss._status_download = ts_model.Status.NONE
+                ss._status_fresh = ts_model.Status.NONE
+                ss._status_analyze = ts_model.Status.NONE
                 stream_segments.append(ss)
-                ss = ts_aws.dynamodb.stream_segment.StreamSegment()
+                ss = ts_model.StreamSegment()
 
     # download first segment, probe, and get stream_time_offset
     first_ss = stream_segments[0]
@@ -83,11 +85,11 @@ def run(event, context):
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
     # save stream
-    stream = ts_aws.dynamodb.stream.Stream(
+    stream = ts_model.Stream(
         stream_id=stream_id,
         time_offset=stream_time_offset,
         url_playlist_raw=twitch_stream.url,
-        _status=ts_aws.dynamodb.Status.READY
+        _status=ts_model.Status.READY
     )
     ts_aws.dynamodb.stream.save_stream(stream)
 

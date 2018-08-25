@@ -1,10 +1,10 @@
-import ts_aws.dynamodb
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_file
 import ts_http
 import ts_logger
 import ts_media
+import ts_model.Status
 
 import json
 
@@ -23,8 +23,8 @@ def run(event, context):
 
     media_filename_video = f"/tmp/{ss.padded}_video.ts"
     media_key_video = f"streams/{stream_id}/raw/video/{ss.padded}.ts"
-    download_raw = ss._status_download == ts_aws.dynamodb.Status.INITIALIZING
-    download_fresh = ss._status_fresh == ts_aws.dynamodb.Status.INITIALIZING
+    download_raw = ss._status_download == ts_model.Status.INITIALIZING
+    download_fresh = ss._status_fresh == ts_model.Status.INITIALIZING
 
     if not download_fresh and not download_raw:
         logger.error(f"stream_segment already processed", stream_segment=ss.__dict__)
@@ -58,7 +58,7 @@ def run(event, context):
         ts_file.delete(media_filename_audio)
         ts_file.delete(packets_filename_video)
         ts_file.delete(packets_filename_audio)
-        ss._status_download = ts_aws.dynamodb.Status.READY
+        ss._status_download = ts_model.Status.READY
 
     else:
         ts_aws.s3.download_file(media_key_video, media_filename_video)
@@ -80,7 +80,7 @@ def run(event, context):
 
         ts_file.delete(media_filename_video_fresh)
         ts_file.delete(packets_filename_video_fresh)
-        ss._status_fresh = ts_aws.dynamodb.Status.READY
+        ss._status_fresh = ts_model.Status.READY
 
     ts_file.delete(media_filename_video)
     ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
