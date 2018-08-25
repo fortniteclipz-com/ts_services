@@ -38,16 +38,16 @@ def run(event, context):
     # init/get stream and stream_segments
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
     if stream is None or stream._status <= ts_aws.dynamodb.Status.INITIALIZING:
-        if stream is None:
-            payload = {
-                'stream_id': clip.stream_id,
-            }
-            ts_aws.sqs.stream_initialize.send_message(payload)
+        if stream is None or stream._status == ts_aws.dynamodb.Status.NONE:
             stream = ts_aws.dynamodb.stream.Stream(
                 stream_id=clip.stream_id,
                 _status=ts_aws.dynamodb.Status.INITIALIZING
             )
             ts_aws.dynamodb.stream.save_stream(stream)
+            payload = {
+                'stream_id': clip.stream_id,
+            }
+            ts_aws.sqs.stream_initialize.send_message(payload)
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
         raise Exception("stream not ready")
 
@@ -56,7 +56,8 @@ def run(event, context):
 
     # check if all stream_segments are ready to process
     ready_to_clip = True
-    stream_segments_to_update = []
+    stream_segments_to_save = []
+    payloads_to_send = []
     for i, css in enumerate(clip_stream_segments):
         download = False
         is_first_css = True if i == 0 else False
@@ -74,16 +75,18 @@ def run(event, context):
                 css._status_download = ts_aws.dynamodb.Status.INITIALIZING
 
         if download:
-            payload = {
+            stream_segments_to_save.append(css)
+            payloads_to_send.append({
                 'stream_id': css.stream_id,
                 'segment': css.segment,
-            }
-            ts_aws.sqs.stream_segment_download.send_message(payload)
-            stream_segments_to_update.append(css)
+            })
+
 
     # update queue status of stream_segments
-    ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_update)
     if not ready_to_clip:
+        ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
+        for p in payloads_to_send:
+            ts_aws.sqs.stream_segment_download.send_message(p)
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
         raise Exception("stream_segments not ready")
 
