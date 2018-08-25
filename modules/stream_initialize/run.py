@@ -20,12 +20,10 @@ def run(event, context):
 
     # check stream already ready
     stream = ts_aws.dynamodb.stream.get_stream(stream_id)
-    logger.info("stream", stream=stream.__dict__)
     if stream is not None and stream._status == ts_aws.dynamodb.Status.READY:
         logger.warn(f"Already processed stream")
         return
 
-    logger.info("init stream and stream_segments")
     # get raw m3u8 url from twitch stream url
     twitch_stream_url = f"https://twitch.tv/videos/{stream_id}"
     twitch_streams = streamlink.streams(twitch_stream_url)
@@ -82,7 +80,6 @@ def run(event, context):
 
     # save stream_segments
     ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
-    logger.info("stream_segments", stream_segments_length=len(stream_segments))
 
     # save stream
     stream = ts_aws.dynamodb.stream.Stream(
@@ -92,7 +89,6 @@ def run(event, context):
         _status=ts_aws.dynamodb.Status.READY
     )
     ts_aws.dynamodb.stream.save_stream(stream)
-    logger.info("stream", stream=stream.__dict__)
 
     logger.info("done")
     return True

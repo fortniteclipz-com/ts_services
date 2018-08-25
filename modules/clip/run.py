@@ -31,20 +31,17 @@ def run(event, context):
         return
 
     # check if clip already ready
-    logger.info("clip", clip=clip.__dict__)
     if clip._status == ts_aws.dynamodb.Status.READY:
-        logger.warn(f"Already processed clip")
+        logger.error(f"Already processed clip")
         return
 
     # init/get stream and stream_segments
-    logger.info("checking stream")
     stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-    if stream is None or stream._status == ts_aws.dynamodb.Status.INITIALIZING:
+    if stream is None or stream._status <= ts_aws.dynamodb.Status.INITIALIZING:
         if stream is None:
             payload = {
                 'stream_id': clip.stream_id,
             }
-            logger.info("pushing to stream_initialize sqs", payload=payload)
             ts_aws.sqs.stream_initialize.send_message(payload)
             stream = ts_aws.dynamodb.stream.Stream(
                 stream_id=clip.stream_id,
@@ -54,11 +51,8 @@ def run(event, context):
         ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
         raise Exception("stream not ready")
 
-    logger.info("stream", stream=stream.__dict__)
-
     # get clip_stream_segments
     clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
-    logger.info("clip_stream_segments", clip_stream_segments_length=len(clip_stream_segments))
 
     # check if all stream_segments are ready to process
     ready_to_clip = True
@@ -84,7 +78,6 @@ def run(event, context):
                 'stream_id': css.stream_id,
                 'segment': css.segment,
             }
-            logger.info("pushing to stream_segment_download sqs", payload=payload)
             ts_aws.sqs.stream_segment_download.send_message(payload)
             stream_segments_to_update.append(css)
 
@@ -95,10 +88,8 @@ def run(event, context):
         raise Exception("stream_segments not ready")
 
     # update clip segments
-    logger.info("creating clip_segments")
     clip_segments = []
     for i, css in enumerate(clip_stream_segments):
-        logger.info("ingesting clip_segment", segment=css.segment)
         is_first_cs = True if i == 0 else False
         is_last_cs = True if i == (len(clip_stream_segments) - 1) else False
         cs = ts_aws.dynamodb.clip_segment.ClipSegment(
@@ -167,7 +158,6 @@ def run(event, context):
         clip_segments.append(cs)
 
     # creating/uploading m3u8
-    logger.info("creating/uploading m3u8")
     m3u8_filename_master = f"/tmp/playlist-master.m3u8"
     m3u8_filename_video = f"/tmp/playlist-video.m3u8"
     m3u8_filename_audio = f"/tmp/playlist-audio.m3u8"
@@ -182,7 +172,6 @@ def run(event, context):
     ts_file.delete(m3u8_filename_video)
     ts_file.delete(m3u8_filename_audio)
 
-    logger.info("saving clip and clip_segments")
     clip.key_playlist_master = m3u8_key_master
     clip.key_playlist_video = m3u8_key_video
     clip.key_playlist_audio = m3u8_key_audio
