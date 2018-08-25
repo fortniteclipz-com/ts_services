@@ -10,6 +10,7 @@ import json
 import re
 import streamlink
 
+ts_media.init_ff_libs()
 logger = ts_logger.get(__name__)
 
 def run(event, context):
