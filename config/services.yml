@@ -5,7 +5,7 @@ service-clip:
   timeout: 30
   events:
     - sqs:
-        arn: arn:aws:sqs:us-west-1:589344262905:ts-clip
+        arn: arn:aws:sqs:us-west-1:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.clip.name}
         batchSize: 1
   package:
     include:
@@ -20,7 +20,7 @@ service-stream-initialize:
   timeout: 300
   events:
     - sqs:
-        arn: arn:aws:sqs:us-west-1:589344262905:ts-stream-initialize
+        arn: arn:aws:sqs:us-west-1:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream-initialize.name}
         batchSize: 1
   package:
     include:
@@ -33,7 +33,7 @@ service-stream-segment-download:
   timeout: 180
   events:
     - sqs:
-        arn: arn:aws:sqs:us-west-1:589344262905:ts-stream-segment-download
+        arn: arn:aws:sqs:us-west-1:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream-segment-download.name}
         batchSize: 1
   package:
     include:

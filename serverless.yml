@@ -20,7 +20,7 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:BatchGetItem
         - dynamodb:BatchWriteItem
-      Resource: arn:aws:dynamodb:us-west-1:589344262905:*
+      Resource: arn:aws:dynamodb:us-west-1:${self:custom.config.aws.account-id}:*
     - Effect: Allow
       Action:
         - s3:PutObject
@@ -33,7 +33,7 @@ provider:
         - sqs:ReceiveMessage
         - sqs:DeleteMessage
         - sqs:ChangeMessageVisibility
-      Resource: arn:aws:sqs:us-west-1:589344262905:*
+      Resource: arn:aws:sqs:us-west-1:${self:custom.config.aws.account-id}:*
 
 package:
   individually: true
@@ -44,6 +44,7 @@ plugins:
   - serverless-python-requirements
 
 custom:
+  config: ${file(../ts_shared/ts_config/ts_config/ts_config.yml)}
   pythonRequirements:
     dockerizePip: non-linux
     dockerSsh: true
