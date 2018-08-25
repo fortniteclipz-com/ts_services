@@ -25,6 +25,7 @@ service-stream-initialize:
   package:
     include:
       - modules/stream_initialize/run.py
+      - libs/ffprobe
 
 service-stream-segment-download:
   handler: run.run
