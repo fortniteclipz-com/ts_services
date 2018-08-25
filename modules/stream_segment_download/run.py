@@ -20,7 +20,6 @@ def run(event, context):
 
     # get stream_segment from dynamodb
     ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
-    logger.info("stream_segment", stream_segment=ss.__dict__)
 
     media_filename_video = f"/tmp/{ss.padded}_video.ts"
     media_key_video = f"streams/{stream_id}/raw/video/{ss.padded}.ts"
@@ -28,11 +27,10 @@ def run(event, context):
     download_fresh = ss._status_fresh == ts_aws.dynamodb.Status.INITIALIZING
 
     if not download_fresh and not download_raw:
-        logger.warn(f"Don't need to downloaded stream_segment", stream_segment=ss.__dict__)
+        logger.error(f"stream_segment already processed", stream_segment=ss.__dict__)
         return
 
     if download_raw:
-        logger.info("downloading and processing raw segment")
         media_filename = f"/tmp/{ss.padded}_raw.ts"
         media_filename_audio = f"/tmp/{ss.padded}_audio.ts"
         packets_filename_video = f"/tmp/{ss.padded}_video.json"
@@ -43,7 +41,6 @@ def run(event, context):
         ts_media.probe_media_video(media_filename_video, packets_filename_video)
         ts_media.probe_media_audio(media_filename_audio, packets_filename_audio)
 
-        logger.info("uploading raw segment")
         media_key_audio = f"streams/{stream_id}/raw/audio/{ss.padded}.ts"
         packets_key_video = f"streams/{stream_id}/raw/meta/video/{ss.padded}.json"
         packets_key_audio = f"streams/{stream_id}/raw/meta/audio/{ss.padded}.json"
@@ -64,12 +61,10 @@ def run(event, context):
         ss._status_download = ts_aws.dynamodb.Status.READY
 
     else:
-        logger.info("getting raw segment from s3")
         ts_aws.s3.download_file(media_key_video, media_filename_video)
 
     # process fresh segment if not processed
     if download_fresh:
-        logger.info("freshing raw segment")
         media_filename_video_fresh = f"/tmp/{ss.padded}_video_fresh.ts"
         packets_filename_video_fresh = f"/tmp/{ss.padded}_video_fresh.json"
         gop = ts_media.calculate_gop(media_filename_video)
@@ -88,9 +83,7 @@ def run(event, context):
         ss._status_fresh = ts_aws.dynamodb.Status.READY
 
     ts_file.delete(media_filename_video)
-
-    logger.info("saving stream_segment")
     ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
 
-    logger.info("done", stream_segment=ss.__dict__)
+    logger.info("done")
     return True
