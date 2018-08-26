@@ -85,5 +85,5 @@ def run(event, context):
     ts_file.delete(media_filename_video)
     ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
 
-    logger.info("done")
+    logger.info("success")
     return True

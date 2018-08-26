@@ -93,5 +93,5 @@ def run(event, context):
     )
     ts_aws.dynamodb.stream.save_stream(stream)
 
-    logger.info("done")
+    logger.info("success")
     return True
