@@ -11,11 +11,13 @@ import ts_file
 import ts_logger
 import ts_media
 import ts_model.ClipSegment
+import ts_model.Error
 import ts_model.Status
 import ts_model.Stream
 import helpers
 
 import json
+import traceback
 
 ts_media.init_ff_libs()
 logger = ts_logger.get(__name__)
@@ -51,8 +53,7 @@ def run(event, context):
                     'stream_id': clip.stream_id,
                 }
                 ts_aws.sqs.stream_initialize.send_message(payload)
-            ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
-            raise Exception("stream not ready")
+            raise ts_model.Exception("stream not ready")
 
         # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
@@ -87,8 +88,7 @@ def run(event, context):
             ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
             for p in payloads_to_send:
                 ts_aws.sqs.stream_segment_download.send_message(p)
-            ts_aws.sqs.clip.change_visibility(event['Records'][0]['receiptHandle'])
-            raise Exception("stream_segments not ready")
+            raise ts_model.Exception("stream_segments not ready")
 
         # create clip segments
         clip_segments = []
@@ -182,7 +182,18 @@ def run(event, context):
         ts_aws.dynamodb.clip.save_clip(clip)
         ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
 
-        logger.info("done")
+        logger.info("success")
         return True
+
+    except ts_model.Exception as e:
+        logger.warn("warn", traceback=''.join(traceback.format_tb(e.__traceback__)))
+        receipt_handle = event['Records'][0]['receiptHandle']
+        ts_aws.sqs.clip.change_visibility(receipt_handle)
+        raise ts_model.Exception(e) from None
+
     except Exception as e:
+        logger.error("error", traceback=''.join(traceback.format_tb(e.__traceback__)))
+        receipt_handle = event['Records'][0]['receiptHandle']
+        ts_aws.sqs.clip.change_visibility(receipt_handle)
+        raise Exception(e) from None
 
