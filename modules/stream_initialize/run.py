@@ -27,7 +27,7 @@ def run(event, context):
         # check stream
         stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         if stream is None:
-            raise ts_model.Exception(ts_model.Exception.STREAM_NOT_EXISTS)
+            raise ts_model.Exception(ts_model.Exception.STREAM_NOT_EXIST)
 
         if stream._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_ALREADY_PROCESSED)
@@ -103,7 +103,7 @@ def run(event, context):
 
     except ts_model.Exception as e:
         if e.code in [
-            ts_model.Exception.STREAM_NOT_EXISTS,
+            ts_model.Exception.STREAM_NOT_EXIST,
             ts_model.Exception.STREAM_ALREADY_PROCESSED,
         ]:
             logger.error("error", code=e.code)
