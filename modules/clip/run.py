@@ -33,9 +33,9 @@ def run(event, context):
         # check clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
         if clip is None:
-            raise ts_model.Exception(ts_model.Exception.CLIP_NOT_EXIST)
+            raise ts_model.Exception(ts_model.Exception.CLIP__NOT_EXIST)
         if clip._status == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.CLIP_ALREADY_PROCESSED)
+            raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
 
         # get/initialize stream and stream_segments
         stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
@@ -50,7 +50,7 @@ def run(event, context):
                     'stream_id': clip.stream_id,
                 }
                 ts_aws.sqs.stream_initialize.send_message(payload)
-            raise ts_model.Exception(ts_model.Exception.STREAM_NOT_READY)
+            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_READY)
 
         # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
@@ -85,7 +85,7 @@ def run(event, context):
             ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
             for p in payloads_to_send:
                 ts_aws.sqs.stream_segment_download.send_message(p)
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS_NOT_READY)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_READY)
 
         # create clip segments
         clip_segments = []
@@ -185,8 +185,8 @@ def run(event, context):
 
     except ts_model.Exception as e:
         if e.code in [
-            ts_model.Exception.CLIP_NOT_EXIST,
-            ts_model.Exception.CLIP_ALREADY_PROCESSED,
+            ts_model.Exception.CLIP__NOT_EXIST,
+            ts_model.Exception.CLIP__ALREADY_PROCESSED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             pass

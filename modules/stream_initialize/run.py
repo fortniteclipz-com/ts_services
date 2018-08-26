@@ -29,9 +29,9 @@ def run(event, context):
         # check stream
         stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         if stream is None:
-            raise ts_model.Exception(ts_model.Exception.STREAM_NOT_EXIST)
+            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_EXIST)
         if stream._status == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.STREAM_ALREADY_PROCESSED)
+            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_PROCESSED)
 
         # get raw m3u8 url from twitch stream url
         twitch_stream_url = f"https://twitch.tv/videos/{stream_id}"
@@ -104,8 +104,8 @@ def run(event, context):
 
     except ts_model.Exception as e:
         if e.code in [
-            ts_model.Exception.STREAM_NOT_EXIST,
-            ts_model.Exception.STREAM_ALREADY_PROCESSED,
+            ts_model.Exception.STREAM__NOT_EXIST,
+            ts_model.Exception.STREAM__ALREADY_PROCESSED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             pass

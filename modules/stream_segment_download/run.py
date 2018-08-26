@@ -27,11 +27,11 @@ def run(event, context):
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
         print(ss)
         if ss is None:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_EXIST)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_EXIST)
         if ss._status_download == ts_model.Status.READY and ss._status_fresh == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_ALREADY_PROCESSED)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_PROCESSED)
         if ss._status_download != ts_model.Status.INITIALIZING and ss._status_fresh != ts_model.Status.INITIALIZING:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_INITIALIZING)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_INITIALIZING)
 
         media_filename_video = f"/tmp/{ss.padded}_video.ts"
         media_key_video = f"streams/{stream_id}/raw/video/{ss.padded}.ts"
@@ -98,9 +98,9 @@ def run(event, context):
 
     except ts_model.Exception as e:
         if e.code in [
-            ts_model.Exception.STREAM_SEGMENT_NOT_EXIST,
-            ts_model.Exception.STREAM_SEGMENT_ALREADY_PROCESSED,
-            ts_model.Exception.STREAM_SEGMENT_NOT_INITIALIZING,
+            ts_model.Exception.STREAM_SEGMENT__NOT_EXIST,
+            ts_model.Exception.STREAM_SEGMENT__ALREADY_PROCESSED,
+            ts_model.Exception.STREAM_SEGMENT__NOT_INITIALIZING,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             pass
