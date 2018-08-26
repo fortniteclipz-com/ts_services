@@ -43,7 +43,7 @@ def run(event, context):
             if stream is None or stream._status == ts_model.Status.NONE:
                 stream = ts_model.Stream(
                     stream_id=clip.stream_id,
-                    _status=ts_model.Status.INITIALIZING
+                    _status=ts_model.Status.INITIALIZING,
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
                 payload = {

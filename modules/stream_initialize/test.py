@@ -6,5 +6,5 @@ datas = [{
 }]
 
 for data in datas:
-    event = {'Records': [{'body': json.dumps(data), 'receiptHandle': None}]}
+    event = {'Records': [{'body': json.dumps(data)}]}
     run.run(event, {})

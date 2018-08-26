@@ -25,7 +25,6 @@ def run(event, context):
 
         # check stream_segment
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
-        print(ss)
         if ss is None:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_EXIST)
         if ss._status_download == ts_model.Status.READY and ss._status_fresh == ts_model.Status.READY:

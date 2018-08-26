@@ -95,7 +95,7 @@ def run(event, context):
             stream_id=stream_id,
             time_offset=stream_time_offset,
             url_playlist_raw=twitch_stream.url,
-            _status=ts_model.Status.READY
+            _status=ts_model.Status.READY,
         )
         ts_aws.dynamodb.stream.save_stream(stream)
 
