@@ -24,6 +24,7 @@ def run(event, context):
         body = json.loads(event['Records'][0]['body'])
         logger.info("body", body=body)
         stream_id = body['stream_id']
+        receipt_handle = event['Records'][0].get('receiptHandle', None)
 
         # check stream
         stream = ts_aws.dynamodb.stream.get_stream(stream_id)
@@ -110,13 +111,11 @@ def run(event, context):
             pass
         else:
             logger.warn("warn", code=e.code)
-            receipt_handle = event['Records'][0]['receiptHandle']
             ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
             raise Exception(e) from None
 
     except Exception as e:
-        logger.error("error", traceback=''.join(traceback.format_tb(e.__traceback__)))
-        receipt_handle = event['Records'][0]['receiptHandle']
+        logger.error("error", traceback=''.join(traceback.format_exc()))
         ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
         raise Exception(e) from None
 

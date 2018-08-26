@@ -1,5 +1,6 @@
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
+import ts_aws.sqs.stream_segment_download
 import ts_file
 import ts_http
 import ts_logger
@@ -20,14 +21,16 @@ def run(event, context):
         logger.info("body", body=body)
         stream_id = body['stream_id']
         segment = body['segment']
+        receipt_handle = event['Records'][0].get('receiptHandle', None)
 
         # check stream_segment
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
+        print(ss)
         if ss is None:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_EXISTS)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_EXIST)
         if ss._status_download == ts_model.Status.READY and ss._status_fresh == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_ALREADY_PROCESSED)
-        if ss._status_download != ts_model.Status.INITIALIZING or ss._status_fresh != ts_model.Status.INITIALIZING:
+        if ss._status_download != ts_model.Status.INITIALIZING and ss._status_fresh != ts_model.Status.INITIALIZING:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_INITIALIZING)
 
         media_filename_video = f"/tmp/{ss.padded}_video.ts"
@@ -95,7 +98,7 @@ def run(event, context):
 
     except ts_model.Exception as e:
         if e.code in [
-            ts_model.Exception.STREAM_SEGMENT_NOT_EXISTS,
+            ts_model.Exception.STREAM_SEGMENT_NOT_EXIST,
             ts_model.Exception.STREAM_SEGMENT_ALREADY_PROCESSED,
             ts_model.Exception.STREAM_SEGMENT_NOT_INITIALIZING,
         ]:
@@ -103,13 +106,11 @@ def run(event, context):
             pass
         else:
             logger.warn("warn", code=e.code)
-            receipt_handle = event['Records'][0]['receiptHandle']
-            ts_aws.sqs.clip.change_visibility(receipt_handle)
+            ts_aws.sqs.stream_segment_download.change_visibility(receipt_handle)
             raise Exception(e) from None
 
     except Exception as e:
-        logger.error("error", traceback=''.join(traceback.format_tb(e.__traceback__)))
-        receipt_handle = event['Records'][0]['receiptHandle']
-        ts_aws.sqs.clip.change_visibility(receipt_handle)
+        logger.error("error", traceback=''.join(traceback.format_exc()))
+        ts_aws.sqs.stream_segment_download.change_visibility(receipt_handle)
         raise Exception(e) from None
 
