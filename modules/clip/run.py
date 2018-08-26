@@ -11,7 +11,7 @@ import ts_file
 import ts_logger
 import ts_media
 import ts_model.ClipSegment
-import ts_model.Error
+import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
 import helpers
@@ -32,13 +32,11 @@ def run(event, context):
         # get clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
         if clip is None:
-            logger.error(f"No clip with clip_id {clip_id}")
-            return
+            raise ts_model.Exception(ts_model.Exception.CLIP_NOT_EXISTS)
 
         # check if clip already ready
         if clip._status == ts_model.Status.READY:
-            logger.error(f"Already processed clip")
-            return
+            raise ts_model.Exception(ts_model.Exception.CLIP_ALREADY_PROCESSED)
 
         # get/initialize stream and stream_segments
         stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
@@ -53,7 +51,7 @@ def run(event, context):
                     'stream_id': clip.stream_id,
                 }
                 ts_aws.sqs.stream_initialize.send_message(payload)
-            raise ts_model.Exception("stream not ready")
+            raise ts_model.Exception(ts_model.Exception.STREAM_NOT_READY)
 
         # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
@@ -88,7 +86,7 @@ def run(event, context):
             ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
             for p in payloads_to_send:
                 ts_aws.sqs.stream_segment_download.send_message(p)
-            raise ts_model.Exception("stream_segments not ready")
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS_NOT_READY)
 
         # create clip segments
         clip_segments = []
@@ -186,10 +184,17 @@ def run(event, context):
         return True
 
     except ts_model.Exception as e:
-        logger.warn("warn", traceback=''.join(traceback.format_tb(e.__traceback__)))
-        receipt_handle = event['Records'][0]['receiptHandle']
-        ts_aws.sqs.clip.change_visibility(receipt_handle)
-        raise ts_model.Exception(e) from None
+        if e.code in [
+            ts_model.Exception.CLIP_NOT_EXISTS,
+            ts_model.Exception.CLIP_ALREADY_PROCESSED,
+        ]:
+            logger.error("error", code=e.code)
+            pass
+        else:
+            logger.warn("warn", code=e.code)
+            receipt_handle = event['Records'][0]['receiptHandle']
+            ts_aws.sqs.clip.change_visibility(receipt_handle)
+            raise Exception(e) from None
 
     except Exception as e:
         logger.error("error", traceback=''.join(traceback.format_tb(e.__traceback__)))
