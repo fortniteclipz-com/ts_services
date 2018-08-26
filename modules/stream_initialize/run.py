@@ -107,15 +107,15 @@ def run(event, context):
             ts_model.Exception.STREAM_NOT_EXIST,
             ts_model.Exception.STREAM_ALREADY_PROCESSED,
         ]:
-            logger.error("error", code=e.code)
+            logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             pass
         else:
-            logger.warn("warn", code=e.code)
+            logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
             raise Exception(e) from None
 
     except Exception as e:
-        logger.error("error", traceback=''.join(traceback.format_exc()))
+        logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
         ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
         raise Exception(e) from None
 

@@ -157,7 +157,7 @@ def run(event, context):
 
             clip_segments.append(cs)
 
-        # creating/uploading m3u8
+        # create/upload m3u8
         m3u8_filename_master = f"/tmp/playlist-master.m3u8"
         m3u8_filename_video = f"/tmp/playlist-video.m3u8"
         m3u8_filename_audio = f"/tmp/playlist-audio.m3u8"
@@ -172,12 +172,13 @@ def run(event, context):
         ts_file.delete(m3u8_filename_video)
         ts_file.delete(m3u8_filename_audio)
 
+        # save clip and clip_segments
         clip.key_playlist_master = m3u8_key_master
         clip.key_playlist_video = m3u8_key_video
         clip.key_playlist_audio = m3u8_key_audio
         clip._status = ts_model.Status.READY
-        ts_aws.dynamodb.clip.save_clip(clip)
         ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
+        ts_aws.dynamodb.clip.save_clip(clip)
 
         logger.info("success")
         return True
@@ -187,15 +188,15 @@ def run(event, context):
             ts_model.Exception.CLIP_NOT_EXIST,
             ts_model.Exception.CLIP_ALREADY_PROCESSED,
         ]:
-            logger.error("error", code=e.code)
+            logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             pass
         else:
-            logger.warn("warn", code=e.code)
+            logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.clip.change_visibility(receipt_handle)
             raise Exception(e) from None
 
     except Exception as e:
-        logger.error("error", traceback=''.join(traceback.format_exc()))
+        logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
         ts_aws.sqs.clip.change_visibility(receipt_handle)
         raise Exception(e) from None
 
