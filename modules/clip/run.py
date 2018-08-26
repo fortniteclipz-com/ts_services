@@ -33,7 +33,6 @@ def run(event, context):
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
         if clip is None:
             raise ts_model.Exception(ts_model.Exception.CLIP_NOT_EXIST)
-
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP_ALREADY_PROCESSED)
 
