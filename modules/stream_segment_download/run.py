@@ -27,7 +27,7 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_EXISTS)
         if ss._status_download == ts_model.Status.READY and ss._status_fresh == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_ALREADY_PROCESSED)
-        if ss._status_download != ts_model.Status.INITIALIZING and ss._status_fresh != ts_model.Status.INITIALIZING:
+        if ss._status_download != ts_model.Status.INITIALIZING or ss._status_fresh != ts_model.Status.INITIALIZING:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT_NOT_INITIALIZING)
 
         media_filename_video = f"/tmp/{ss.padded}_video.ts"
