@@ -1,4 +1,4 @@
-service-clip:
+service--clip:
   handler: run.run
   module: modules/clip
   memorySize: 256
@@ -13,9 +13,9 @@ service-clip:
       - modules/clip/helpers.py
       - libs/ffprobe
 
-service-stream-initialize:
+service--stream--initialize:
   handler: run.run
-  module: modules/stream_initialize
+  module: modules/stream__initialize
   memorySize: 512
   timeout: 300
   events:
@@ -24,12 +24,12 @@ service-stream-initialize:
         batchSize: 1
   package:
     include:
-      - modules/stream_initialize/run.py
+      - modules/stream__initialize/run.py
       - libs/ffprobe
 
-service-stream-segment-download:
+service--stream--segment-download:
   handler: run.run
-  module: modules/stream_segment_download
+  module: modules/stream_segment__download
   memorySize: 1024
   timeout: 300
   events:
@@ -38,7 +38,7 @@ service-stream-segment-download:
         batchSize: 1
   package:
     include:
-      - modules/stream_segment_download/run.py
+      - modules/stream_segment__download/run.py
       - libs/ffmpeg
       - libs/ffprobe
 
