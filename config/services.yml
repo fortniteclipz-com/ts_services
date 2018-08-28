@@ -13,6 +13,24 @@ service--clip:
       - modules/clip/helpers.py
       - libs/ffprobe
 
+service--media-export--postprocess:
+  handler: run.run
+  module: modules/media_export__postprocess
+  memorySize: 128
+  timeout: 30
+  events:
+    - cloudwatchEvent:
+        event:
+          source:
+            - "aws.mediaconvert"
+          detail:
+            status:
+              - complete
+              - error
+  package:
+    include:
+      - modules/media_export__postprocess/run.py
+
 service--stream--initialize:
   handler: run.run
   module: modules/stream__initialize
