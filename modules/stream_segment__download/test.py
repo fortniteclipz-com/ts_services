@@ -12,7 +12,7 @@ bodies = [{
     'segment': 2,
 }, {
     'stream_id': 285219394,
-    'segment': 4,
+    'segment': 3,
 }]
 
 for body in bodies:

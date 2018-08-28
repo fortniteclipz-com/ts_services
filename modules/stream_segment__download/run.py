@@ -100,7 +100,7 @@ def run(event, context):
             ts_model.Exception.STREAM_SEGMENT__ALREADY_PROCESSED,
             ts_model.Exception.STREAM_SEGMENT__NOT_INITIALIZING,
         ]:
-            pass
+            return True
         else:
             ts_aws.sqs.stream_segment_download.change_visibility(receipt_handle)
             raise Exception(e) from None

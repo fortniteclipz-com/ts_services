@@ -32,11 +32,11 @@ def run(event, context):
 
         # check clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
-        if clip._status == ts_model.Status.READY or True:
+        if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
 
         try:
-            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+            stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
         except ts_model.Exception as e:
             logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             stream = ts_model.Stream(
