@@ -144,8 +144,8 @@ def run(event, context):
                     cs.audio_time_duration,
                     cs.audio_time_in,
                     cs.audio_time_out,
-                    audio_packets_pos,
-                    audio_packets_byterange,
+                    cs.audio_packets_pos,
+                    cs.audio_packets_byterange,
                 ) = helpers.get_packets_data(
                     packets_audio,
                     is_first_cs,
@@ -153,9 +153,9 @@ def run(event, context):
                     cs.video_time_in,
                     cs.video_time_out,
                 )
-                if is_last_cs:
-                    cs.audio_packets_pos = audio_packets_pos
-                    cs.audio_packets_byterange = audio_packets_byterange
+                # if is_last_cs:
+                #     cs.audio_packets_pos = audio_packets_pos
+                #     cs.audio_packets_byterange = audio_packets_byterange
 
                 ts_file.delete(packets_filename_video)
                 ts_file.delete(packets_filename_audio)
