@@ -24,6 +24,7 @@ def run(event, context):
             media._status_export = ts_model.Status.READY
         else:
             media._status_export = ts_model.Status.NONE
+        media.key_media_export = f"{media_type}s/{media_id}/{media_type}.mp4"
 
         if media_type == "clip":
             ts_aws.dynamodb.clip.save_clip(media)
