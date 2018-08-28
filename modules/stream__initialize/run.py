@@ -61,9 +61,6 @@ def run(event, context):
                     ss.padded = segment_padded
                     ss.url_media_raw = url_media_raw
                 if ss.time_duration is not None and ss.segment is not None:
-                    ss._status_download = ts_model.Status.NONE
-                    ss._status_fresh = ts_model.Status.NONE
-                    ss._status_analyze = ts_model.Status.NONE
                     stream_segments.append(ss)
                     ss = ts_model.StreamSegment()
 

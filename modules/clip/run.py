@@ -42,7 +42,6 @@ def run(event, context):
             logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             stream = ts_model.Stream(
                 stream_id=clip.stream_id,
-                _status=ts_model.Status.NONE,
             )
 
         if stream._status <= ts_model.Status.INITIALIZING:
