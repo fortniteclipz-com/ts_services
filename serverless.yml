@@ -23,6 +23,10 @@ provider:
       Resource: arn:aws:dynamodb:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:*
     - Effect: Allow
       Action:
+        - mediaconvert:CreateJob
+      Resource: arn:aws:mediaconvert:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:*
+    - Effect: Allow
+      Action:
         - s3:PutObject
         - s3:GetObject
       Resource: arn:aws:s3:::*
