@@ -32,15 +32,21 @@ def run(event, context):
 
         # check clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
-        if clip is None:
-            raise ts_model.Exception(ts_model.Exception.CLIP__NOT_EXIST)
-        if clip._status == ts_model.Status.READY:
+        if clip._status == ts_model.Status.READY or True:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
 
+        try:
+            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+        except ts_model.Exception as e:
+            logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
+            stream = ts_model.Stream(
+                stream_id=clip.stream_id,
+                _status=ts_model.Status.NONE,
+            )
+
         # get/initialize stream and stream_segments
-        stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-        if stream is None or stream._status <= ts_model.Status.INITIALIZING:
-            if stream is None or stream._status == ts_model.Status.NONE:
+        if stream._status <= ts_model.Status.INITIALIZING:
+            if stream._status == ts_model.Status.NONE:
                 stream = ts_model.Stream(
                     stream_id=clip.stream_id,
                     _status=ts_model.Status.INITIALIZING,
@@ -183,20 +189,22 @@ def run(event, context):
         logger.info("success")
         return True
 
-    except ts_model.Exception as e:
-        if e.code in [
+    except Exception as e:
+        if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.CLIP__NOT_EXIST,
             ts_model.Exception.CLIP__ALREADY_PROCESSED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            pass
-        else:
+            return True
+        elif type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM__NOT_READY,
+            ts_model.Exception.STREAM_SEGMENTS__NOT_READY,
+        ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.clip.change_visibility(receipt_handle)
             raise Exception(e) from None
-
-    except Exception as e:
-        logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-        ts_aws.sqs.clip.change_visibility(receipt_handle)
-        raise Exception(e) from None
+        else:
+            logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
+            ts_aws.sqs.clip.change_visibility(receipt_handle)
+            raise Exception(e) from None
 

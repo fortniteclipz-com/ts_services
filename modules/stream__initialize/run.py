@@ -28,16 +28,18 @@ def run(event, context):
 
         # check stream
         stream = ts_aws.dynamodb.stream.get_stream(stream_id)
-        if stream is None:
-            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_EXIST)
         if stream._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_PROCESSED)
 
         # get raw m3u8 url from twitch stream url
-        twitch_stream_url = f"https://twitch.tv/videos/{stream_id}"
-        twitch_streams = streamlink.streams(twitch_stream_url)
-        twitch_stream = twitch_streams['best']
-        twitch_stream_url_prefix = "/".join(twitch_stream.url.split("/")[:-1])
+        try:
+            twitch_stream_url = f"https://twitch.tv/videos/{stream_id}"
+            twitch_streams = streamlink.streams(twitch_stream_url)
+            twitch_stream = twitch_streams['best']
+            twitch_stream_url_prefix = "/".join(twitch_stream.url.split("/")[:-1])
+        except Exception as e:
+            logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
+            raise ts_model.Exception(ts_model.Exception.STREAM_ID__INVALID) from None
 
         # download raw m3u8 and extract segment info from m3u8
         playlist_filename = f"/tmp/playlist-raw.m3u8"
@@ -102,20 +104,15 @@ def run(event, context):
         logger.info("success")
         return True
 
-    except ts_model.Exception as e:
-        if e.code in [
-            ts_model.Exception.STREAM__NOT_EXIST,
-            ts_model.Exception.STREAM__ALREADY_PROCESSED,
-        ]:
-            logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            pass
-        else:
-            logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
-            raise Exception(e) from None
-
     except Exception as e:
         logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-        ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
-        raise Exception(e) from None
+        if type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM__NOT_EXIST,
+            ts_model.Exception.STREAM__ALREADY_PROCESSED,
+            ts_model.Exception.STREAM_ID__INVALID,
+        ]:
+            return True
+        else:
+            ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
+            raise Exception(e) from None
 
