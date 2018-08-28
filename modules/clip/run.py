@@ -35,6 +35,7 @@ def run(event, context):
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
 
+        # get/initialize stream
         try:
             stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
         except ts_model.Exception as e:
@@ -44,7 +45,6 @@ def run(event, context):
                 _status=ts_model.Status.NONE,
             )
 
-        # get/initialize stream and stream_segments
         if stream._status <= ts_model.Status.INITIALIZING:
             if stream._status == ts_model.Status.NONE:
                 stream = ts_model.Stream(
