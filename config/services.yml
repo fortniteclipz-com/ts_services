@@ -22,11 +22,11 @@ service--media-export--postprocess:
     - cloudwatchEvent:
         event:
           source:
-            - "aws.mediaconvert"
+            - aws.mediaconvert
           detail:
             status:
-              - complete
-              - error
+              - COMPLETE
+              - ERROR
   package:
     include:
       - modules/media_export__postprocess/run.py
