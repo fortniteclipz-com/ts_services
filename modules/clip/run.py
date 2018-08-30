@@ -22,6 +22,10 @@ import traceback
 ts_media.init_ff_libs()
 logger = ts_logger.get(__name__)
 
+bucket = ts_config.get('aws.s3.main.name')
+region = ts_config.get('aws.s3.main.region')
+url_media_prefix = f"https://s3-{region}.amazonaws.com/{bucket}"
+
 def run(event, context):
     try:
         logger.info("start", event=event, context=context)
@@ -102,9 +106,6 @@ def run(event, context):
                 segment=css.segment,
             )
 
-            bucket = ts_config.get('aws.s3.main.name')
-            region = ts_config.get('aws.s3.main.region')
-            url_media_prefix = F"https://s3-{region}.amazonaws.com/{bucket}"
             video_url_media = css.key_media_video_fresh if is_first_cs else css.key_media_video
             cs.video_url_media = f"{url_media_prefix}/{video_url_media}"
             cs.audio_url_media = f"{url_media_prefix}/{css.key_media_audio}"
