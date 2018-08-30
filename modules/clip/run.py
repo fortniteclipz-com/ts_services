@@ -30,23 +30,9 @@ def run(event, context):
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
 
-        # get/initialize stream
-        try:
-            stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
-        except ts_model.Exception as e:
-            logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            stream = ts_model.Stream(
-                stream_id=clip.stream_id,
-            )
-
-        if stream._status <= ts_model.Status.INITIALIZING:
-            if stream._status == ts_model.Status.NONE:
-                stream._status = ts_model.Status.INITIALIZING
-                ts_aws.dynamodb.stream.save_stream(stream)
-                payload = {
-                    'stream_id': clip.stream_id,
-                }
-                ts_aws.sqs.stream_initialize.send_message(payload)
+        # check if stream is ready
+        stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
+        if stream._status != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_READY)
 
         # check if all clip_stream_segments are ready to process
@@ -103,6 +89,7 @@ def run(event, context):
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.CLIP__NOT_EXIST,
             ts_model.Exception.CLIP__ALREADY_PROCESSED,
+            ts_model.Exception.STREAM__NOT_EXIST,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True

@@ -25,8 +25,6 @@ def run(event, context):
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
         if ss._status_download == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_PROCESSED)
-        if ss._status_download == ts_model.Status.NONE:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_INITIALIZING)
 
         media_filename = f"/tmp/{ss.padded}.ts"
         ts_http.download_file(ss.media_url, media_filename)
@@ -48,7 +46,6 @@ def run(event, context):
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.STREAM_SEGMENT__NOT_EXIST,
             ts_model.Exception.STREAM_SEGMENT__ALREADY_PROCESSED,
-            ts_model.Exception.STREAM_SEGMENT__NOT_INITIALIZING,
         ]:
             return True
         else:
