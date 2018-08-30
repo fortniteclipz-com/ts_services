@@ -7,7 +7,7 @@ import ts_aws.sqs.stream_initialize
 import ts_aws.sqs.stream_segment_download
 import ts_config
 import ts_logger
-import ts_aws.mediaconvert
+import ts_aws.mediaconvert.clip
 import ts_model.ClipSegment
 import ts_model.Exception
 import ts_model.Status
@@ -60,25 +60,24 @@ def run(event, context):
         # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
         ready_to_clip = True
-        stream_segments_to_save = []
-        payloads_to_send = []
+        clip_stream_segments_to_save = []
         for css in clip_stream_segments:
             if css._status_download == ts_model.Status.INITIALIZING:
                 ready_to_clip = False
+
             if css._status_download == ts_model.Status.NONE:
                 ready_to_clip = False
                 css._status_download = ts_model.Status.INITIALIZING
-                stream_segments_to_save.append(css)
-                payloads_to_send.append({
-                    'stream_id': css.stream_id,
-                    'segment': css.segment,
-                })
+                clip_stream_segments_to_save.append(css)
 
         # if not ready to clip send queue/save db status of stream_segments
         if not ready_to_clip:
-            ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
-            for p in payloads_to_send:
-                ts_aws.sqs.stream_segment_download.send_message(p)
+            ts_aws.dynamodb.stream_segment.save_stream_segments(clip_stream_segments_to_save)
+            for ss in clip_stream_segments_to_save:
+                ts_aws.sqs.stream_segment_download.send_message({
+                    'stream_id': ss.stream_id,
+                    'segment': ss.segment,
+                })
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_READY)
 
         # create clip segments
@@ -87,9 +86,13 @@ def run(event, context):
             is_first_cs = True if i == 0 else False
             is_last_cs = True if i == (len(clip_stream_segments) - 1) else False
 
-            time_in = clip.time_in if is_first_cs else None
-            time_out = clip.time_out if is_last_cs else None
+            if is_first_cs and int(round(css.time_out)) == int(round(clip.time_in)):
+                continue
+            if is_last_cs and int(round(css.time_in)) == int(round(clip.time_out)):
+                continue
 
+            time_in = clip.time_in - css.time_in  if is_first_cs else None
+            time_out = clip.time_out - css.time_in if is_last_cs else None
             cs = ts_model.ClipSegment(
                 clip_id=clip.clip_id,
                 segment=css.segment,
@@ -98,10 +101,9 @@ def run(event, context):
                 time_out=time_out,
                 media_key=css.media_key,
             )
-
             clip_segments.append(cs)
 
-        ts_aws.mediaconvert.create(clip_segments)
+        ts_aws.mediaconvert.clip.create(clip, clip_segments)
 
         ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
         ts_aws.dynamodb.clip.save_clip(clip)

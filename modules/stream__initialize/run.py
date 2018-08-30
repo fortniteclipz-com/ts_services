@@ -38,33 +38,39 @@ def run(event, context):
             logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             raise ts_model.Exception(ts_model.Exception.STREAM_ID__INVALID) from None
 
-        # download raw m3u8 and extract segment info from m3u8
+        # download raw m3u8
         playlist_filename = f"/tmp/playlist-raw.m3u8"
         ts_http.download_file(twitch_stream.url, playlist_filename)
+
+        # extract segment info from m3u8
+        timestamp = 0
         stream_segments = []
-        ss = ts_model.StreamSegment()
+        ss_duration = None
+        ss = None
         with open(playlist_filename, 'r') as f:
             for line in f:
-                if "EXTINF" in line:
-                    time_duration_raw = line.strip()
-                    time_duration = float(re.findall("\d+\.\d+", time_duration_raw)[0])
-                    ss.time_duration = time_duration
-                if ".ts" in line:
-                    segment_raw = line.strip()
-                    ss.segment = int(''.join(filter(str.isdigit, segment_raw)))
-                    ss.padded = str(ss.segment).zfill(6)
-                    ss.media_url = f"{twitch_stream_url_prefix}/{segment_raw}"
-                if ss.time_duration is not None and ss.segment is not None:
-                    stream_segments.append(ss)
-                    ss = ts_model.StreamSegment()
+                if ss is None:
+                    ss = ts_model.StreamSegment(
+                        stream_id=stream_id
+                    )
 
-        # add stream_id, time_in, and time_out to stream_segments
-        timestamp = 0
-        for ss in stream_segments:
-            ss.stream_id = stream_id
-            ss.time_in = timestamp
-            timestamp += ss.time_duration
-            ss.time_out = timestamp
+                if "EXTINF" in line:
+                    ss_duration_raw = line.strip()
+                    ss_duration = float(re.findall("\d+\.\d+", ss_duration_raw)[0])
+
+                if ".ts" in line:
+                    ss_segment_raw = line.strip()
+                    ss.segment = int(''.join(filter(str.isdigit, ss_segment_raw)))
+                    ss.padded = str(ss.segment).zfill(6)
+                    ss.media_url = f"{twitch_stream_url_prefix}/{ss_segment_raw}"
+
+                if ss.segment is not None and ss_duration is not None:
+                    ss.time_in = timestamp
+                    timestamp += ss_duration
+                    ss.time_out = timestamp
+                    stream_segments.append(ss)
+                    ss = None
+                    ss_duration = None
 
         # save stream_segments
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
