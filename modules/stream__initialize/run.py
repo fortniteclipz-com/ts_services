@@ -1,6 +1,7 @@
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.sqs.stream_initialize
+import ts_file
 import ts_http
 import ts_logger
 import ts_model.Exception
@@ -12,6 +13,7 @@ import json
 import re
 import streamlink
 import traceback
+from ffprobe3 import FFProbe
 
 logger = ts_logger.get(__name__)
 
@@ -30,8 +32,9 @@ def run(event, context):
 
         # get raw m3u8 url from twitch stream url
         try:
-            twitch_stream_url = f"https://twitch.tv/videos/{stream_id}"
-            twitch_streams = streamlink.streams(twitch_stream_url)
+            twitch_url = f"https://twitch.tv/videos/{stream_id}"
+            twitch_streams = streamlink.streams(twitch_url)
+            logger.info("twitch_streams", twitch_streams=twitch_streams)
             twitch_stream = twitch_streams['best']
             twitch_stream_url_prefix = "/".join(twitch_stream.url.split("/")[:-1])
         except Exception as e:
@@ -72,6 +75,18 @@ def run(event, context):
                     ss = None
                     ss_duration = None
 
+        # calculate fps
+        fps = 0
+        first_ss = stream_segments[0]
+        media_filename = f"/tmp/{first_ss.padded}.ts"
+        ts_http.download_file(first_ss.media_url, media_filename)
+        metadata = FFProbe(media_filename)
+        for stream in metadata.streams:
+            if stream.is_video():
+                [top, bottom] = stream.r_frame_rate.split("/")
+                fps = float(top) / float(bottom)
+        ts_file.delete(media_filename)
+
         # save stream_segments
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
@@ -79,6 +94,7 @@ def run(event, context):
         stream = ts_model.Stream(
             stream_id=stream_id,
             playlist_url=twitch_stream.url,
+            fps=fps,
             _status=ts_model.Status.READY,
         )
         ts_aws.dynamodb.stream.save_stream(stream)
