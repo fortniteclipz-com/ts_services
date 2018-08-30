@@ -4,6 +4,7 @@ import ts_aws.sqs.stream_initialize
 import ts_file
 import ts_http
 import ts_logger
+import ts_media
 import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
@@ -15,6 +16,7 @@ import streamlink
 import traceback
 from ffprobe3 import FFProbe
 
+ts_media.init_ff_libs()
 logger = ts_logger.get(__name__)
 
 def run(event, context):

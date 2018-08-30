@@ -41,6 +41,7 @@ service--stream--initialize:
   package:
     include:
       - modules/stream__initialize/run.py
+      - libs/ffprobe
 
 service--stream--segment-download:
   handler: run.run
