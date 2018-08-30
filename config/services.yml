@@ -10,8 +10,6 @@ service--clip:
   package:
     include:
       - modules/clip/run.py
-      - modules/clip/helpers.py
-      - libs/ffprobe
 
 service--media-export--postprocess:
   handler: run.run
@@ -43,7 +41,6 @@ service--stream--initialize:
   package:
     include:
       - modules/stream__initialize/run.py
-      - libs/ffprobe
 
 service--stream--segment-download:
   handler: run.run
@@ -57,6 +54,4 @@ service--stream--segment-download:
   package:
     include:
       - modules/stream_segment__download/run.py
-      - libs/ffmpeg
-      - libs/ffprobe
 

@@ -1,10 +1,8 @@
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.sqs.stream_initialize
-import ts_file
 import ts_http
 import ts_logger
-import ts_media
 import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
@@ -15,7 +13,6 @@ import re
 import streamlink
 import traceback
 
-ts_media.init_ff_libs()
 logger = ts_logger.get(__name__)
 
 def run(event, context):
@@ -54,32 +51,15 @@ def run(event, context):
                     ss.time_duration = time_duration
                 if ".ts" in line:
                     segment_raw = line.strip()
-                    segment = int(''.join(filter(str.isdigit, segment_raw)))
-                    segment_padded = str(segment).zfill(6)
-                    url_media_raw = f"{twitch_stream_url_prefix}/{segment_raw}"
-                    ss.segment = segment
-                    ss.padded = segment_padded
-                    ss.url_media_raw = url_media_raw
+                    ss.segment = int(''.join(filter(str.isdigit, segment_raw)))
+                    ss.padded = str(ss.segment).zfill(6)
+                    ss.media_url = f"{twitch_stream_url_prefix}/{segment_raw}"
                 if ss.time_duration is not None and ss.segment is not None:
                     stream_segments.append(ss)
                     ss = ts_model.StreamSegment()
 
-        # download first segment, probe, and get stream_time_offset
-        first_ss = stream_segments[0]
-        media_filename = f"/tmp/{first_ss.padded}.ts"
-        packets_filename = f"/tmp/{first_ss.padded}.json"
-        ts_http.download_file(first_ss.url_media_raw, media_filename)
-        ts_media.probe_media_video(media_filename, packets_filename)
-        packets_video = ts_file.get_json(packets_filename)['packets']
-        stream_time_offset = float(packets_video[0]['pts_time'])
-
-        # delete tmp files
-        ts_file.delete(playlist_filename)
-        ts_file.delete(media_filename)
-        ts_file.delete(packets_filename)
-
         # add stream_id, time_in, and time_out to stream_segments
-        timestamp = stream_time_offset
+        timestamp = 0
         for ss in stream_segments:
             ss.stream_id = stream_id
             ss.time_in = timestamp
@@ -92,8 +72,7 @@ def run(event, context):
         # save stream
         stream = ts_model.Stream(
             stream_id=stream_id,
-            time_offset=stream_time_offset,
-            url_playlist_raw=twitch_stream.url,
+            playlist_url=twitch_stream.url,
             _status=ts_model.Status.READY,
         )
         ts_aws.dynamodb.stream.save_stream(stream)
