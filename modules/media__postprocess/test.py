@@ -19,8 +19,7 @@ events = [{
         'status': 'COMPLETE',
         'userMetadata':
         {
-            'media_type': 'clip',
-            'media_id': 'c-zbFvt88cty9VhkpKqHVLDo'
+            'clip_id': 'c-NibQGRzhJ6ZeKktGezP4Cg'
         },
         'outputGroupDetails': [
         {
@@ -56,8 +55,7 @@ events = [{
         'errorMessage': 'Unable to open input file [s3://twitch-stitch-main/clips/c-zbFvt88cty9VhkpKqHVLDo/playlist-video.m3u8]: [Failed probe/open: [HLS reader failed to create HLS manifest: Failed to read data: Input not found at s3://twitch-stitch-main/clips/c-zbFvt88cty9VhkpKqHVLDo/playlist-video.m3u8]]',
         'userMetadata':
         {
-            'media_type': 'clip',
-            'media_id': 'c-zbFvt88cty9VhkpKqHVLDo'
+            'montage_id': 'm-TqycrB6MvyKzwpXmBAFE5E'
         }
     }
 }]

@@ -11,9 +11,9 @@ service--clip:
     include:
       - modules/clip/run.py
 
-service--media-export--postprocess:
+service--media--postprocess:
   handler: run.run
-  module: modules/media_export__postprocess
+  module: modules/media__postprocess
   memorySize: 128
   timeout: 30
   events:
@@ -27,7 +27,7 @@ service--media-export--postprocess:
               - ERROR
   package:
     include:
-      - modules/media_export__postprocess/run.py
+      - modules/media__postprocess/run.py
 
 service--stream--initialize:
   handler: run.run

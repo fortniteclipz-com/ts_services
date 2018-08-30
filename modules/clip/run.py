@@ -2,11 +2,11 @@ import ts_aws.dynamodb.clip
 import ts_aws.dynamodb.clip_segment
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
+import ts_aws.mediaconvert.clip
 import ts_aws.sqs.clip
 import ts_aws.sqs.stream_initialize
 import ts_aws.sqs.stream_segment_download
 import ts_logger
-import ts_aws.mediaconvert.clip
 import ts_model.ClipSegment
 import ts_model.Exception
 import ts_model.Status
@@ -41,7 +41,7 @@ def run(event, context):
 
         if stream._status <= ts_model.Status.INITIALIZING:
             if stream._status == ts_model.Status.NONE:
-                stream._status = ts_model.Status.INITIALIZING,
+                stream._status = ts_model.Status.INITIALIZING
                 ts_aws.dynamodb.stream.save_stream(stream)
                 payload = {
                     'stream_id': clip.stream_id,
