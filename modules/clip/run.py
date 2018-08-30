@@ -5,7 +5,6 @@ import ts_aws.dynamodb.stream_segment
 import ts_aws.sqs.clip
 import ts_aws.sqs.stream_initialize
 import ts_aws.sqs.stream_segment_download
-import ts_config
 import ts_logger
 import ts_aws.mediaconvert.clip
 import ts_model.ClipSegment
@@ -17,10 +16,6 @@ import json
 import traceback
 
 logger = ts_logger.get(__name__)
-
-bucket = ts_config.get('aws.s3.main.name')
-region = ts_config.get('aws.s3.main.region')
-url_media_prefix = f"https://s3-{region}.amazonaws.com/{bucket}"
 
 def run(event, context):
     try:
@@ -46,10 +41,7 @@ def run(event, context):
 
         if stream._status <= ts_model.Status.INITIALIZING:
             if stream._status == ts_model.Status.NONE:
-                stream = ts_model.Stream(
-                    stream_id=clip.stream_id,
-                    _status=ts_model.Status.INITIALIZING,
-                )
+                stream._status = ts_model.Status.INITIALIZING,
                 ts_aws.dynamodb.stream.save_stream(stream)
                 payload = {
                     'stream_id': clip.stream_id,
@@ -64,7 +56,6 @@ def run(event, context):
         for css in clip_stream_segments:
             if css._status_download == ts_model.Status.INITIALIZING:
                 ready_to_clip = False
-
             if css._status_download == ts_model.Status.NONE:
                 ready_to_clip = False
                 css._status_download = ts_model.Status.INITIALIZING
@@ -85,12 +76,10 @@ def run(event, context):
         for i, css in enumerate(clip_stream_segments):
             is_first_cs = True if i == 0 else False
             is_last_cs = True if i == (len(clip_stream_segments) - 1) else False
-
             if is_first_cs and int(round(css.time_out)) == int(round(clip.time_in)):
                 continue
             if is_last_cs and int(round(css.time_in)) == int(round(clip.time_out)):
                 continue
-
             time_in = clip.time_in - css.time_in  if is_first_cs else None
             time_out = clip.time_out - css.time_in if is_last_cs else None
             cs = ts_model.ClipSegment(
@@ -104,7 +93,6 @@ def run(event, context):
             clip_segments.append(cs)
 
         ts_aws.mediaconvert.clip.create(clip, clip_segments)
-
         ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
         ts_aws.dynamodb.clip.save_clip(clip)
 
