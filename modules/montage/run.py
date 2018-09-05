@@ -22,8 +22,10 @@ def run(event, context):
 
         # check montage
         montage = ts_aws.dynamodb.montage.get_montage(montage_id)
+
+        # check if montage is already created
         if montage._status == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_PROCESSED)
+            raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
         montage_clips = ts_aws.dynamodb.montage_clip.get_montage_clips(m.montage_id)
 
@@ -42,7 +44,7 @@ def run(event, context):
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.MONTAGE__NOT_EXIST,
-            ts_model.Exception.MONTAGE__ALREADY_PROCESSED,
+            ts_model.Exception.MONTAGE__ALREADY_CREATED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True

@@ -39,9 +39,9 @@ def run(event, context):
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
 
-        # check if stream is already processed
+        # check if stream is already initialized
         if stream._status_initialize == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_PROCESSED)
+            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_INITIALIZED)
 
         # get raw m3u8 url from twitch stream url
         try:
@@ -52,7 +52,7 @@ def run(event, context):
             twitch_stream_url_prefix = "/".join(twitch_stream.url.split("/")[:-1])
         except Exception as e:
             logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            raise ts_model.Exception(ts_model.Exception.STREAM_ID__INVALID) from None
+            raise ts_model.Exception(ts_model.Exception.STREAM_ID__NOT_VALID) from None
 
         # download raw m3u8
         playlist_filename = f"/tmp/playlist-raw.m3u8"
@@ -116,9 +116,8 @@ def run(event, context):
     except Exception as e:
         logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
         if type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.STREAM__NOT_EXIST,
-            ts_model.Exception.STREAM__ALREADY_PROCESSED,
-            ts_model.Exception.STREAM_ID__INVALID,
+            ts_model.Exception.STREAM__ALREADY_INITIALIZED,
+            ts_model.Exception.STREAM_ID__NOT_VALID,
         ]:
             return True
         else:

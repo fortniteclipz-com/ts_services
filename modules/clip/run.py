@@ -28,9 +28,9 @@ def run(event, context):
         # get clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
 
-        # check if clip is already processed
+        # check if clip is already created
         if clip._status == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
+            raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_CREATED)
 
         # get/initialize stream
         try:
@@ -49,7 +49,7 @@ def run(event, context):
 
         # check if stream is ready
         if stream._status_initialize != ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_READY)
+            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
         # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
@@ -71,7 +71,7 @@ def run(event, context):
                     'stream_id': ss.stream_id,
                     'segment': ss.segment,
                 })
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_READY)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_DOWNLOADED)
 
         # create clip segments
         clip_segments = []
@@ -100,13 +100,13 @@ def run(event, context):
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.CLIP__NOT_EXIST,
-            ts_model.Exception.CLIP__ALREADY_PROCESSED,
+            ts_model.Exception.CLIP__ALREADY_CREATED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.STREAM__NOT_READY,
-            ts_model.Exception.STREAM_SEGMENTS__NOT_READY,
+            ts_model.Exception.STREAM__NOT_INITIALIZED,
+            ts_model.Exception.STREAM_SEGMENTS__NOT_DOWNLOADED,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.clip.change_visibility(receipt_handle)
