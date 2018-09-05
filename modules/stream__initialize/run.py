@@ -1,6 +1,6 @@
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
-import ts_aws.sqs.stream_initialize
+import ts_aws.sqs.stream__initialize
 import ts_file
 import ts_http
 import ts_logger
@@ -27,8 +27,19 @@ def run(event, context):
         stream_id = body['stream_id']
         receipt_handle = event['Records'][0].get('receiptHandle', None)
 
-        # check stream
-        stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+        # get/initialize stream
+        try:
+            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+        except ts_model.Exception as e:
+            if e.code == ts_model.Exception.STREAM__NOT_EXIST:
+                logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
+                stream = ts_model.Stream(
+                    stream_id=stream_id,
+                    _status=ts_model.Status.INITIALIZING
+                )
+                ts_aws.dynamodb.stream.save_stream(stream)
+
+        # check if stream is already processed
         if stream._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_PROCESSED)
 
@@ -93,12 +104,10 @@ def run(event, context):
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
         # save stream
-        stream = ts_model.Stream(
-            stream_id=stream_id,
-            playlist_url=twitch_stream.url,
-            fps=fps,
-            _status=ts_model.Status.READY,
-        )
+        stream.stream_id = stream_id,
+        stream.playlist_url = twitch_stream.url,
+        stream.fps = fps,
+        stream._status = ts_model.Status.READY,
         ts_aws.dynamodb.stream.save_stream(stream)
 
         logger.info("success")
@@ -113,6 +122,6 @@ def run(event, context):
         ]:
             return True
         else:
-            ts_aws.sqs.stream_initialize.change_visibility(receipt_handle)
+            ts_aws.sqs.stream__initialize.change_visibility(receipt_handle)
             raise Exception(e) from None
 

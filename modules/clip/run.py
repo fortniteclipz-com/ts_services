@@ -4,8 +4,8 @@ import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.mediaconvert.clip
 import ts_aws.sqs.clip
-import ts_aws.sqs.stream_initialize
-import ts_aws.sqs.stream_segment_download
+import ts_aws.sqs.stream__initialize
+import ts_aws.sqs.stream_segment__download
 import ts_logger
 import ts_model.ClipSegment
 import ts_model.Exception
@@ -25,13 +25,29 @@ def run(event, context):
         clip_id = body['clip_id']
         receipt_handle = event['Records'][0].get('receiptHandle', None)
 
-        # check clip
+        # get clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
+
+        # check if clip is already processed
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_PROCESSED)
 
+        # get/initialize stream
+        try:
+            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+        except ts_model.Exception as e:
+            if e.code == ts_model.Exception.STREAM__NOT_EXIST:
+                logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
+                stream = ts_model.Stream(
+                    stream_id=stream_id,
+                    _status=ts_model.Status.INITIALIZING
+                )
+                ts_aws.dynamodb.stream.save_stream(stream)
+                ts_aws.sqs.stream_initialize.send_message({
+                    'stream_id': stream_id,
+                })
+
         # check if stream is ready
-        stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
         if stream._status != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_READY)
 
@@ -51,7 +67,7 @@ def run(event, context):
         if not ready_to_clip:
             ts_aws.dynamodb.stream_segment.save_stream_segments(clip_stream_segments_to_save)
             for ss in clip_stream_segments_to_save:
-                ts_aws.sqs.stream_segment_download.send_message({
+                ts_aws.sqs.stream_segment__download.send_message({
                     'stream_id': ss.stream_id,
                     'segment': ss.segment,
                 })
@@ -85,7 +101,6 @@ def run(event, context):
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.CLIP__NOT_EXIST,
             ts_model.Exception.CLIP__ALREADY_PROCESSED,
-            ts_model.Exception.STREAM__NOT_EXIST,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
