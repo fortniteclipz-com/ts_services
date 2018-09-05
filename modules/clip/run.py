@@ -44,7 +44,7 @@ def run(event, context):
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
                 ts_aws.sqs.stream_initialize.send_message({
-                    'stream_id': stream_id,
+                    'stream_id': stream.stream_id,
                 })
 
         # check if stream is ready

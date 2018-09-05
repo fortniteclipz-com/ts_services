@@ -27,7 +27,7 @@ def run(event, context):
         if montage._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
-        montage_clips = ts_aws.dynamodb.montage_clip.get_montage_clips(m.montage_id)
+        montage_clips = ts_aws.dynamodb.montage_clip.get_montage_clips(montage.montage_id)
 
         clip_ids = list(map(lambda mc: mc.clip_id, montage_clips))
         clips = ts_aws.dynamodb.clip.get_clips(clip_ids)

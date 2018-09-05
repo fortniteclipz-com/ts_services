@@ -33,9 +33,12 @@ def run(event, context):
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
                 ts_aws.sqs.stream_initialize.send_message({
-                    'stream_id': stream_id,
+                    'stream_id': stream.stream_id,
                 })
-                raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED) from None
+
+        # check if stream is ready
+        if stream._status_initialize != ts_model.Status.READY:
+            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
         # check stream_segment
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
