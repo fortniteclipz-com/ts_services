@@ -12,8 +12,8 @@ def run(event, context):
     try:
         logger.info("start", event=event, context=context)
         userMetadata = event['detail'].get('userMetadata') or {}
-        clip_id = userMetadata.get('clip_id') or None
-        montage_id = userMetadata.get('montage_id') or None
+        clip_id = userMetadata.get('clip_id')
+        montage_id = userMetadata.get('montage_id')
         status = event['detail']['status']
 
         if clip_id is not None:

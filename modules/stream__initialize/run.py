@@ -35,12 +35,12 @@ def run(event, context):
                 logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
                 stream = ts_model.Stream(
                     stream_id=stream_id,
-                    _status=ts_model.Status.INITIALIZING
+                    _status_initialize=ts_model.Status.INITIALIZING
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
 
         # check if stream is already processed
-        if stream._status == ts_model.Status.READY:
+        if stream._status_initialize == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_PROCESSED)
 
         # get raw m3u8 url from twitch stream url
@@ -107,7 +107,7 @@ def run(event, context):
         stream.stream_id = stream_id,
         stream.playlist_url = twitch_stream.url,
         stream.fps = fps,
-        stream._status = ts_model.Status.READY,
+        stream._status_initialize = ts_model.Status.READY,
         ts_aws.dynamodb.stream.save_stream(stream)
 
         logger.info("success")
