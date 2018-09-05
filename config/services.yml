@@ -29,6 +29,19 @@ service--media--postprocess:
     include:
       - modules/media__postprocess/run.py
 
+service--montage:
+  handler: run.run
+  module: modules/montage
+  memorySize: 256
+  timeout: 30
+  events:
+    - sqs:
+        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.montage.name}
+        batchSize: 1
+  package:
+    include:
+      - modules/montage/run.py
+
 service--stream--initialize:
   handler: run.run
   module: modules/stream__initialize
@@ -36,7 +49,7 @@ service--stream--initialize:
   timeout: 300
   events:
     - sqs:
-        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream-initialize.name}
+        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream--initialize.name}
         batchSize: 1
   package:
     include:
@@ -50,9 +63,8 @@ service--stream--segment-download:
   timeout: 300
   events:
     - sqs:
-        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream-segment-download.name}
+        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream-segment--download.name}
         batchSize: 1
   package:
     include:
       - modules/stream_segment__download/run.py
-

@@ -1,6 +1,8 @@
+import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_aws.sqs.stream_segment__download
+import ts_aws.sqs.stream__initialize
 import ts_file
 import ts_http
 import ts_logger
@@ -19,7 +21,7 @@ def run(event, context):
         logger.info("body", body=body)
         stream_id = body['stream_id']
         segment = body['segment']
-        receipt_handle = event['Records'][0].get('receiptHandle', None)
+        receipt_handle = event['Records'][0].get('receiptHandle')
 
         # get/initialize stream and check if stream is ready
         try:
@@ -32,7 +34,7 @@ def run(event, context):
                     _status_initialize=ts_model.Status.INITIALIZING
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
-                ts_aws.sqs.stream_initialize.send_message({
+                ts_aws.sqs.stream_segment__initialize.send_message({
                     'stream_id': stream.stream_id,
                 })
 
@@ -76,9 +78,9 @@ def run(event, context):
             ts_model.Exception.STREAM__NOT_INITIALIZED,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            ts_aws.sqs.clip.change_visibility(receipt_handle)
+            ts_aws.sqs.stream_segment__download.change_visibility(receipt_handle)
             raise Exception(e) from None
         else:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
-            ts_aws.sqs.clip.change_visibility(receipt_handle)
+            ts_aws.sqs.stream_segment__download.change_visibility(receipt_handle)
             raise Exception(e) from None

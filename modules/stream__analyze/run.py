@@ -14,7 +14,7 @@ def run(event, context):
         body = json.loads(event['Records'][0]['body'])
         logger.info("body", body=body)
         stream_id = body['stream_id']
-        receipt_handle = event['Records'][0].get('receiptHandle', None)
+        receipt_handle = event['Records'][0].get('receiptHandle')
 
         # get/initialize stream
         try:
@@ -34,7 +34,6 @@ def run(event, context):
         # check if stream is ready
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
-
 
         stream_segments = ts_aws.dynamodb.stream_segment.get_stream_segments(stream.stream_id)
         print("stream_segments", stream_segments)

@@ -23,7 +23,7 @@ def run(event, context):
         body = json.loads(event['Records'][0]['body'])
         logger.info("body", body=body)
         clip_id = body['clip_id']
-        receipt_handle = event['Records'][0].get('receiptHandle', None)
+        receipt_handle = event['Records'][0].get('receiptHandle')
 
         # get clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
@@ -34,16 +34,16 @@ def run(event, context):
 
         # get/initialize stream
         try:
-            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+            stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
         except ts_model.Exception as e:
             if e.code == ts_model.Exception.STREAM__NOT_EXIST:
                 logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
                 stream = ts_model.Stream(
-                    stream_id=stream_id,
+                    stream_id=clip.stream_id,
                     _status_initialize=ts_model.Status.INITIALIZING
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
-                ts_aws.sqs.stream_initialize.send_message({
+                ts_aws.sqs.stream__initialize.send_message({
                     'stream_id': stream.stream_id,
                 })
 
@@ -78,8 +78,15 @@ def run(event, context):
         for i, css in enumerate(clip_stream_segments):
             is_first_cs = True if i == 0 else False
             is_last_cs = True if i == (len(clip_stream_segments) - 1) else False
+
+            if is_first_cs and int(round(css.time_out)) == int(round(clip.time_in)):
+                continue
+            if is_last_cs and int(round(css.time_in)) == int(round(clip.time_out)):
+                continue
+
             time_in = clip.time_in - css.time_in  if is_first_cs else None
             time_out = clip.time_out - css.time_in if is_last_cs else None
+
             cs = ts_model.ClipSegment(
                 clip_id=clip.clip_id,
                 segment=css.segment,

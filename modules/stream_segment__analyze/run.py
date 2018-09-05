@@ -14,7 +14,7 @@ def run(event, context):
         logger.info("body", body=body)
         stream_id = body['stream_id']
         segment = body['segment']
-        receipt_handle = event['Records'][0].get('receiptHandle', None)
+        receipt_handle = event['Records'][0].get('receiptHandle')
 
         logger.info("success")
         return True

@@ -15,10 +15,10 @@ logger = ts_logger.get(__name__)
 def run(event, context):
     try:
         logger.info("start", event=event, context=context)
-        body = json.loads(event['body'])
+        body = json.loads(event['Records'][0]['body'])
         logger.info("body", body=body)
         montage_id = body['montage_id']
-        receipt_handle = event['Records'][0].get('receiptHandle', None)
+        receipt_handle = event['Records'][0].get('receiptHandle')
 
         # check montage
         montage = ts_aws.dynamodb.montage.get_montage(montage_id)

@@ -25,7 +25,7 @@ def run(event, context):
         body = json.loads(event['Records'][0]['body'])
         logger.info("body", body=body)
         stream_id = body['stream_id']
-        receipt_handle = event['Records'][0].get('receiptHandle', None)
+        receipt_handle = event['Records'][0].get('receiptHandle')
 
         # get/initialize stream
         try:
@@ -35,7 +35,7 @@ def run(event, context):
                 logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
                 stream = ts_model.Stream(
                     stream_id=stream_id,
-                    _status_initialize=ts_model.Status.INITIALIZING
+                    _status_initialize=ts_model.Status.INITIALIZING,
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
 
@@ -94,9 +94,9 @@ def run(event, context):
         media_filename = f"/tmp/{first_ss.padded}.ts"
         ts_http.download_file(first_ss.media_url, media_filename)
         metadata = FFProbe(media_filename)
-        for stream in metadata.streams:
-            if stream.is_video():
-                [top, bottom] = stream.r_frame_rate.split("/")
+        for s in metadata.streams:
+            if s.is_video():
+                [top, bottom] = s.r_frame_rate.split("/")
                 fps = float(top) / float(bottom)
         ts_file.delete(media_filename)
 
@@ -104,10 +104,10 @@ def run(event, context):
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
         # save stream
-        stream.stream_id = stream_id,
-        stream.playlist_url = twitch_stream.url,
-        stream.fps = fps,
-        stream._status_initialize = ts_model.Status.READY,
+        stream.stream_id = stream_id
+        stream.playlist_url = twitch_stream.url
+        stream.fps = fps
+        stream._status_initialize = ts_model.Status.READY
         ts_aws.dynamodb.stream.save_stream(stream)
 
         logger.info("success")
