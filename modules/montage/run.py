@@ -27,12 +27,20 @@ def run(event, context):
         if montage._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
-        montage_clips = ts_aws.dynamodb.montage_clip.get_montage_clips(montage.montage_id)
-
-        clip_ids = list(map(lambda mc: mc.clip_id, montage_clips))
-        clips = ts_aws.dynamodb.clip.get_clips(clip_ids)
+        clips = ts_aws.dynamodb.clip.get_clips(montage.clip_ids)
         if not all(c._status == ts_model.Status.READY for c in clips):
             raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_READY)
+
+        # create montage_clips
+        montage_clips = []
+        for index, clip in enumerate(clips):
+            montage_clip = ts_model.MontageClip(
+                montage_id=montage.montage_id,
+                clip_id=clip.clip_id,
+                clip_order=index,
+                media_key=clip.media_key,
+            )
+            montage_clips.append(montage_clip)
 
         ts_aws.mediaconvert.montage.create(montage, montage_clips)
         ts_aws.dynamodb.montage_clip.save_montage_clips(montage_clips)
