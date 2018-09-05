@@ -16,7 +16,7 @@ def run(event, context):
         stream_id = body['stream_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # get/initialize stream
+        # get/initialize stream and check if stream is ready
         try:
             stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         except ts_model.Exception as e:
@@ -27,9 +27,13 @@ def run(event, context):
                     _status_initialize=ts_model.Status.INITIALIZING
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
-                ts_aws.sqs.stream_initialize.send_message({
-                    'stream_id': stream.stream_id,
-                })
+
+        if stream._status_initialize == ts_model.Status.NONE:
+            stream._status_initialize = ts_model.Status.INITIALIZING
+            ts_aws.dynamodb.stream.save_stream(stream)
+            ts_aws.sqs.stream__initialize.send_message({
+                'stream_id': stream.stream_id,
+            })
 
         # check if stream is ready
         if stream._status_initialize != ts_model.Status.READY:
