@@ -62,10 +62,6 @@ def run(event, context):
         for i, css in enumerate(clip_stream_segments):
             is_first_cs = True if i == 0 else False
             is_last_cs = True if i == (len(clip_stream_segments) - 1) else False
-            # if is_first_cs and int(round(css.time_out)) == int(round(clip.time_in)):
-            #     continue
-            # if is_last_cs and int(round(css.time_in)) == int(round(clip.time_out)):
-            #     continue
             time_in = clip.time_in - css.time_in  if is_first_cs else None
             time_out = clip.time_out - css.time_in if is_last_cs else None
             cs = ts_model.ClipSegment(
