@@ -3,6 +3,7 @@ import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_aws.sqs.stream__initialize
 import ts_aws.sqs.stream_segment__analyze
+import ts_file
 import ts_logger
 import ts_media
 import ts_model.Exception
@@ -70,6 +71,8 @@ def run(event, context):
             thumbnail_key = f"{ss.stream_id}/{f}"
             ts_aws.s3.upload_file_thumbnails(thumbnail_filename, thumbnail_key)
             os.remove(thumbnail_filename)
+
+        ts_file.delete(media_filename)
 
         logger.info("success")
         return True
