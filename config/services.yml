@@ -42,6 +42,20 @@ service--montage:
     include:
       - modules/montage/run.py
 
+service--stream--analyze:
+  handler: run.run
+  module: modules/stream__analyze
+  memorySize: 512
+  timeout: 300
+  events:
+    - sqs:
+        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream--analyze.name}
+        batchSize: 1
+  package:
+    include:
+      - modules/stream__analyze/run.py
+
+
 service--stream--initialize:
   handler: run.run
   module: modules/stream__initialize
@@ -55,6 +69,19 @@ service--stream--initialize:
     include:
       - modules/stream__initialize/run.py
       - libs/ffprobe
+
+service--stream--segment-analyze:
+  handler: run.run
+  module: modules/stream_segment__analyze
+  memorySize: 1024
+  timeout: 300
+  events:
+    - sqs:
+        arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream-segment--analyze.name}
+        batchSize: 1
+  package:
+    include:
+      - modules/stream_segment__analyze/run.py
 
 service--stream--segment-download:
   handler: run.run
