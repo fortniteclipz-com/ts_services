@@ -72,7 +72,7 @@ def run(event, context):
 
         if len(jobs):
             stream_segments_to_save = list(map(lambda j: j['ss'], jobs))
-            # ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
+            ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
 
             jobs_download = []
             jobs_analyze = []
