@@ -1,9 +1,14 @@
+import ts_aws.dynamodb.stream
+import ts_aws.dynamodb.stream_segment
+import ts_aws.s3
 import ts_aws.sqs.stream_segment__analyze
 import ts_logger
 import ts_media
 import ts_model.Exception
 
+import glob
 import json
+import os
 import traceback
 
 logger = ts_logger.get(__name__)
@@ -53,7 +58,17 @@ def run(event, context):
         if ss._status_download != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED)
 
+        media_key = f"streams/{stream_id}/{ss.padded}.ts"
+        media_filename = f"/tmp/{ss.padded}.ts"
+        ts_aws.s3.download_file(media_key, media_filename)
 
+        thumbnail_filename_pattern = f"/tmp/thumb_{ss.stream_id}_{ss.padded}_%06d.jpg"
+        ts_media.thumbnail_media_video(media_filename, thumbnail_filename_pattern)
+        for thumbnail_filename in glob.glob("/tmp/*.jpg"):
+            f = os.path.basename(thumbnail_filename)
+            thumbnail_key = f"{ss.stream_id}/{f}"
+            ts_aws.s3.upload_file_thumbnails(thumbnail_filename, thumbnail_key)
+            os.remove(thumbnail_filename)
 
         logger.info("success")
         return True

@@ -3,6 +3,7 @@ import json
 
 bodies = [{
     'stream_id': 285219394,
+    'segment': 0,
 }]
 
 for body in bodies:
