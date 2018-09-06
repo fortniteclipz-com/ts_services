@@ -82,6 +82,7 @@ service--stream--segment-analyze:
   package:
     include:
       - modules/stream_segment__analyze/run.py
+      - libs/ffmpeg
 
 service--stream--segment-download:
   handler: run.run

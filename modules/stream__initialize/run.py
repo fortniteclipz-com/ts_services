@@ -16,8 +16,8 @@ import streamlink
 import traceback
 from ffprobe3 import FFProbe
 
-ts_media.init_ff_libs()
 logger = ts_logger.get(__name__)
+ts_media.init_ff_libs()
 
 def run(event, context):
     try:

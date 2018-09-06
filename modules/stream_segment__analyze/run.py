@@ -14,6 +14,7 @@ import os
 import traceback
 
 logger = ts_logger.get(__name__)
+ts_media.init_ff_libs()
 
 def run(event, context):
     try:
