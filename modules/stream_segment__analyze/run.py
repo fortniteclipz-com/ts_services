@@ -1,5 +1,6 @@
 import ts_aws.sqs.stream_segment__analyze
 import ts_logger
+import ts_media
 import ts_model.Exception
 
 import json
@@ -16,15 +17,56 @@ def run(event, context):
         segment = body['segment']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
+        # get/initialize stream and check if stream is ready
+        try:
+            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+        except ts_model.Exception as e:
+            if e.code == ts_model.Exception.STREAM__NOT_EXIST:
+                logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
+                stream = ts_model.Stream(
+                    stream_id=stream_id,
+                )
+                ts_aws.dynamodb.stream.save_stream(stream)
+
+        if stream._status_initialize == ts_model.Status.NONE:
+            stream._status_initialize = ts_model.Status.INITIALIZING
+            ts_aws.dynamodb.stream.save_stream(stream)
+            ts_aws.sqs.stream__initialize.send_message({
+                'stream_id': stream.stream_id,
+            })
+        if stream._status_initialize != ts_model.Status.READY:
+            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
+
+        # get stream_segment
+        ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
+
+        if ss._status_analyzed == ts_model.Status.READY:
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_ANALYZED)
+
+        if ss._status_download == ts_model.Status.NONE:
+            ss._status_download = ts_model.Status.INITIALIZING
+            ts_aws.dynamodb.stream.save_stream_segment(ss)
+            ts_aws.sqs.stream__download.send_message({
+                'stream_id': ss.stream_id,
+                'segment': ss.segment,
+            })
+        if ss._status_download != ts_model.Status.READY:
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED)
+
+
+
         logger.info("success")
         return True
 
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM_SEGMENT__ALREADY_ANALYZED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM__NOT_INITIALIZED,
+            ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.stream_segment__analyze.change_visibility(receipt_handle)

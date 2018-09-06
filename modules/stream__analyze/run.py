@@ -30,18 +30,15 @@ def run(event, context):
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
 
+        if stream._status_analyze == ts_model.Status.READY:
+            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_ANALYZED)
+
         if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.INITIALIZING
             ts_aws.dynamodb.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
             })
-
-        # check if stream is ready
-        if stream._status_analyze == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_ANALYZED)
-
-        # check if stream is ready
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 

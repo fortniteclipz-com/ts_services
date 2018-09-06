@@ -49,8 +49,6 @@ def run(event, context):
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
             })
-
-        # check if stream is ready
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
