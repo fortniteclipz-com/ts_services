@@ -5,6 +5,7 @@ import ts_aws.mediaconvert.montage
 import ts_aws.sqs.montage
 import ts_logger
 import ts_model.Exception
+import ts_model.MontageClip
 import ts_model.Status
 
 import json

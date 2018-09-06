@@ -6,6 +6,8 @@ import ts_aws.sqs.stream_segment__download
 import ts_aws.sqs.stream_segment__analyze
 import ts_logger
 import ts_model.Exception
+import ts_model.Status
+import ts_model.Stream
 
 import json
 import traceback
