@@ -2,7 +2,7 @@ import run
 import json
 
 bodies = [{
-    'clip_id': 'c-jd8fbHXJyTmGAFz8SepSDm',
+    'clip_id': 'c-adCMXfBURihXef2zYrZKRV',
 }]
 
 for body in bodies:

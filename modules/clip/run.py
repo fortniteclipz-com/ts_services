@@ -69,19 +69,19 @@ def run(event, context):
             if to_download == True:
                 jobs.append({
                     'to_download': to_download,
-                    ss: ss,
+                    'css': css,
                 })
 
         if len(jobs):
-            stream_segments_to_save = list(map(lambda j: j['ss'], jobs))
+            stream_segments_to_save = list(map(lambda j: j['css'], jobs))
             ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
 
             jobs_download = []
             for j in jobs:
                 if j['to_download']:
                     jobs_download.append({
-                        'stream_id': j['ss'].stream_id,
-                        'segment': j['ss'].segment,
+                        'stream_id': j['css'].stream_id,
+                        'segment': j['css'].segment,
                     })
                 if len(jobs_download) == 10:
                     ts_aws.sqs.stream_segment__download.send_messages(jobs_download)
