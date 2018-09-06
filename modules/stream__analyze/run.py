@@ -1,6 +1,7 @@
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.sqs.stream__analyze
+import ts_aws.sqs.stream__initialize
 import ts_aws.sqs.stream_segment__download
 import ts_aws.sqs.stream_segment__analyze
 import ts_logger
