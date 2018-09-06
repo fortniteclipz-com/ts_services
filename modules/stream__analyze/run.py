@@ -75,18 +75,34 @@ def run(event, context):
 
         if len(jobs):
             stream_segments_to_save = list(map(lambda j: j['ss'], jobs))
-            ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
+            # ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
+
+            jobs_download = []
+            jobs_analyze = []
             for j in jobs:
                 if j['to_download']:
-                    ts_aws.sqs.stream_segment__download.send_message({
+                    jobs_download.append({
                         'stream_id': j['ss'].stream_id,
                         'segment': j['ss'].segment,
                     })
                 if j['to_analyze']:
-                    ts_aws.sqs.stream_segment__analyze.send_message({
+                    jobs_analyze.append({
                         'stream_id': j['ss'].stream_id,
                         'segment': j['ss'].segment,
                     })
+                if len(jobs_download) == 10:
+                    ts_aws.sqs.stream_segment__download.send_messages(jobs_download)
+                    jobs_download = []
+                if len(jobs_analyze) == 10:
+                    ts_aws.sqs.stream_segment__analyze.send_messages(jobs_analyze)
+                    jobs_analyze = []
+
+            if len(jobs_download):
+                ts_aws.sqs.stream_segment__download.send_messages(jobs_download)
+                jobs_download = []
+            if len(jobs_analyze):
+                ts_aws.sqs.stream_segment__analyze.send_messages(jobs_analyze)
+                jobs_analyze = []
 
         if not ready:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_ANALYZED)
