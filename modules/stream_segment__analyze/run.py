@@ -1,4 +1,5 @@
 import ts_aws.dynamodb.stream
+import ts_aws.dynamodb.stream_event
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_aws.sqs.stream__initialize
@@ -10,10 +11,13 @@ import ts_media
 import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
+import ts_model.StreamEvent
 
 import glob
 import json
 import os
+import random
+import shortuuid
 import traceback
 
 logger = ts_logger.get(__name__)
@@ -75,6 +79,28 @@ def run(event, context):
             thumbnail_key = f"{ss.stream_id}/{f}"
             ts_aws.s3.upload_file_thumbnails(thumbnail_filename, thumbnail_key)
             os.remove(thumbnail_filename)
+
+        # ------------------------------------------------
+
+        stream_events = []
+        for i in range(0, 3):
+            print("here")
+            has_event = True if random.randint(1, 1) == 1 else False
+            print("has_event", has_event)
+            if has_event:
+                se = ts_model.StreamEvent(
+                    stream_id=stream.stream_id,
+                    event_id=f"e-{shortuuid.uuid()}",
+                    tag="kill" if random.randint(1, 2) == 1 else "knock",
+                    time=random.uniform(ss.time_in, ss.time_out),
+                    game="fortnite",
+                )
+                stream_events.append(se)
+
+        # ------------------------------------------------
+
+        # save stream_events
+        ts_aws.dynamodb.stream_event.save_stream_events(stream_events)
 
         # save stream_segment
         ss._status_analyze = ts_model.Status.READY
