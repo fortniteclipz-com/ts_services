@@ -56,24 +56,35 @@ def run(event, context):
 
         # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
-        ready_to_clip = True
-        clip_stream_segments_to_save = []
+        ready = True
+        jobs = []
         for css in clip_stream_segments:
-            if css._status_download == ts_model.Status.INITIALIZING:
-                ready_to_clip = False
-            if css._status_download == ts_model.Status.NONE:
-                ready_to_clip = False
-                css._status_download = ts_model.Status.INITIALIZING
-                clip_stream_segments_to_save.append(css)
+            to_download = False
 
-        # if not ready to clip send queue/save db status of stream_segments
-        if not ready_to_clip:
-            ts_aws.dynamodb.stream_segment.save_stream_segments(clip_stream_segments_to_save)
-            for ss in clip_stream_segments_to_save:
-                ts_aws.sqs.stream_segment__download.send_message({
-                    'stream_id': ss.stream_id,
-                    'segment': ss.segment,
+            if css._status_download == ts_model.Status.INITIALIZING:
+                ready = False
+            if css._status_download == ts_model.Status.NONE:
+                ready = False
+                to_download = True
+                css._status_download = ts_model.Status.INITIALIZING
+
+            if to_download == True:
+                jobs.append({
+                    'to_download': to_download,
+                    ss: ss,
                 })
+
+        if len(jobs):
+            stream_segments_to_save = list(map(lambda j: j['ss'], jobs))
+            ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
+            for j in jobs:
+                if j['to_download']:
+                    ts_aws.sqs.stream_segment__download.send_message({
+                        'stream_id': j['ss'].stream_id,
+                        'segment': j['ss'].segment,
+                    })
+
+        if not ready:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_DOWNLOADED)
 
         # create clip segments

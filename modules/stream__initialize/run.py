@@ -104,7 +104,6 @@ def run(event, context):
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
         # save stream
-        stream.stream_id = stream_id
         stream.playlist_url = twitch_stream.url
         stream.fps = fps
         stream._status_initialize = ts_model.Status.READY

@@ -29,7 +29,7 @@ def run(event, context):
 
         clips = ts_aws.dynamodb.clip.get_clips(montage.clip_ids)
         if not all(c._status == ts_model.Status.READY for c in clips):
-            raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_READY)
+            raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_CREATED)
 
         # create montage_clips
         montage_clips = []
@@ -57,7 +57,7 @@ def run(event, context):
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.CLIPS__NOT_READY,
+            ts_model.Exception.CLIPS__NOT_CREATED,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.montage.change_visibility(receipt_handle)
