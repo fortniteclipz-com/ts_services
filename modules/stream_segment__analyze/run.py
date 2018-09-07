@@ -84,9 +84,7 @@ def run(event, context):
 
         stream_events = []
         for i in range(0, 3):
-            print("here")
-            has_event = True if random.randint(1, 3) == 1 else False
-            print("has_event", has_event)
+            has_event = True if random.randint(1, 10) == 1 else False
             if has_event:
                 se = ts_model.StreamEvent(
                     stream_id=stream.stream_id,
