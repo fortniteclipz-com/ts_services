@@ -70,7 +70,7 @@ service--stream--initialize:
       - modules/stream__initialize/run.py
       - libs/ffprobe
 
-service--stream--segment-analyze:
+service--stream-segment--analyze:
   handler: run.run
   module: modules/stream_segment__analyze
   memorySize: 1024
@@ -84,7 +84,7 @@ service--stream--segment-analyze:
       - modules/stream_segment__analyze/run.py
       - libs/ffmpeg
 
-service--stream--segment-download:
+service--stream-segment--download:
   handler: run.run
   module: modules/stream_segment__download
   memorySize: 1024
