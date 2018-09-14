@@ -84,8 +84,8 @@ def run(event, context):
 
         stream_moments = []
         for i in range(0, 3):
-            has_event = True if random.randint(1, 30) == 1 else False
-            if has_event:
+            is_moment = True if random.randint(1, 30) == 1 else False
+            if is_moment:
                 se = ts_model.StreamMoment(
                     stream_id=stream.stream_id,
                     moment_id=f"e-{shortuuid.uuid()}",
