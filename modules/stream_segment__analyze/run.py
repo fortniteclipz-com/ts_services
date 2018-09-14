@@ -1,5 +1,5 @@
 import ts_aws.dynamodb.stream
-import ts_aws.dynamodb.stream_event
+import ts_aws.dynamodb.stream_moment
 import ts_aws.dynamodb.stream_segment
 import ts_aws.s3
 import ts_aws.sqs.stream__initialize
@@ -11,7 +11,7 @@ import ts_media
 import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
-import ts_model.StreamEvent
+import ts_model.StreamMoment
 
 import glob
 import json
@@ -82,23 +82,24 @@ def run(event, context):
 
         # ------------------------------------------------
 
-        stream_events = []
+        stream_moments = []
         for i in range(0, 3):
             has_event = True if random.randint(1, 30) == 1 else False
             if has_event:
-                se = ts_model.StreamEvent(
+                se = ts_model.StreamMoment(
                     stream_id=stream.stream_id,
-                    event_id=f"e-{shortuuid.uuid()}",
+                    moment_id=f"e-{shortuuid.uuid()}",
                     tag="kill" if random.randint(1, 2) == 1 else "knock",
                     time=random.uniform(ss.time_in, ss.time_out),
                     game="fortnite",
+                    segment=ss.segment,
                 )
-                stream_events.append(se)
+                stream_moments.append(se)
 
         # ------------------------------------------------
 
-        # save stream_events
-        ts_aws.dynamodb.stream_event.save_stream_events(stream_events)
+        # save stream_moments
+        ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
 
         # save stream_segment
         ss._status_analyze = ts_model.Status.READY
