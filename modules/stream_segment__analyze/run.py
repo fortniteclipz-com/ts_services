@@ -24,8 +24,8 @@ import traceback
 
 import cv2
 import Levenshtein
+import PIL.Image
 import pytesseract
-from PIL import Image
 
 logger = ts_logger.get(__name__)
 ts_media.init_ff_libs()
@@ -75,7 +75,9 @@ def run(event, context):
         if ss._status_download != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED)
 
+        stream_moments = []
         filename_prefix = f"/tmp/{ss.stream_id}/{ss.padded}"
+
         media_key = f"streams/{ss.stream_id}/{ss.padded}.ts"
         media_filename = f"{filename_prefix}/{ss.padded}.ts"
         ts_aws.s3.download_file(media_key, media_filename)
@@ -83,12 +85,13 @@ def run(event, context):
         filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
         ts_media.thumbnail_media_video(media_filename, filename_raw_pattern)
 
-        for filename_raw in sorted(glob.glob(f"{filename_prefix}/raw_*.jpg")):
+        filenames_raw = sorted(glob.glob(f"{filename_prefix}/raw_*.jpg"))
+        for filename_raw in filenames_raw:
             basename_raw = os.path.basename(filename_raw)
             frame_padded = basename_raw.replace("raw_", "").replace(".jpg", "")
             frame = int(frame_padded)
 
-            image_raw = Image.open(filename_raw)
+            image_raw = PIL.Image.open(filename_raw)
             width, height = image_raw.size
             image_cropped = image_raw.crop((0.388040625 * width, 0.681944 * height, 0.5221875 * width, 0.7277777 * height))
 
@@ -111,11 +114,39 @@ def run(event, context):
                     continue
                 cv2.rectangle(image_cropped, (x, y), (x + w, y + h), (255, 0, 255), 2)
                 image_contour = image_cropped[y : y + h, x : x + w]
-                contour_filename = f"{filename_prefix}/contour_{frame_padded}.jpg"
-                cv2.imwrite(contour_filename , image_contour)
+
+                contour_filename = f"{filename_prefix}/contour_{frame_padded}_{i}.jpg"
+                cv2.imwrite(contour_filename, image_contour)
+
+                image_text = PIL.Image.open(contour_filename)
+                texts = pytesseract.image_to_string(image_text).split()
+                for t in texts:
+                    if Levenshtein.ratio(t, u"KNOCKED") > .7:
+                        sm = ts_model.StreamMoment(
+                            stream_id=ss.stream_id,
+                            moment_id=f"mo-{shortuuid.uuid()}",
+                            tag="knocked",
+                            time=(frame * 0.5) + ss.time_in,
+                            game="fortnite",
+                            segment=ss.segment,
+                        )
+                        logger.info("knocked", stream_moment=sm)
+                        stream_moments.append(sm)
+
+                    if Levenshtein.ratio(t, u"ELIMINATED") > .7:
+                        sm = ts_model.StreamMoment(
+                            stream_id=ss.stream_id,
+                            moment_id=f"mo-{shortuuid.uuid()}",
+                            tag="eliminated",
+                            time=(frame * 0.5) + ss.time_in,
+                            game="fortnite",
+                            segment=ss.segment,
+                        )
+                        logger.info("eliminated", stream_moment=sm)
+                        stream_moments.append(sm)
 
         # save stream_moments
-        # ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
+        ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
 
         # save stream_segment
         ss._status_analyze = ts_model.Status.READY
