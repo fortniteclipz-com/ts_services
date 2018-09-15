@@ -15,10 +15,17 @@ import ts_model.StreamMoment
 
 import glob
 import json
+import math
 import os
 import random
 import shortuuid
+import shutil
 import traceback
+
+import cv2
+import Levenshtein
+import pytesseract
+from PIL import Image
 
 logger = ts_logger.get(__name__)
 ts_media.init_ff_libs()
@@ -68,45 +75,54 @@ def run(event, context):
         if ss._status_download != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED)
 
-        media_key = f"streams/{stream_id}/{ss.padded}.ts"
-        media_filename = f"/tmp/{ss.padded}.ts"
+        filename_prefix = f"/tmp/{ss.stream_id}/{ss.padded}"
+        media_key = f"streams/{ss.stream_id}/{ss.padded}.ts"
+        media_filename = f"{filename_prefix}/{ss.padded}.ts"
         ts_aws.s3.download_file(media_key, media_filename)
 
-        thumbnail_filename_pattern = f"/tmp/thumb_{ss.stream_id}_{ss.padded}_%06d.jpg"
-        ts_media.thumbnail_media_video(media_filename, thumbnail_filename_pattern)
-        for thumbnail_filename in glob.glob("/tmp/*.jpg"):
-            f = os.path.basename(thumbnail_filename)
-            thumbnail_key = f"{ss.stream_id}/{f}"
-            ts_aws.s3.upload_file_thumbnails(thumbnail_filename, thumbnail_key)
-            os.remove(thumbnail_filename)
+        filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
+        ts_media.thumbnail_media_video(media_filename, filename_raw_pattern)
 
-        # ------------------------------------------------
+        for filename_raw in sorted(glob.glob(f"{filename_prefix}/raw_*.jpg")):
+            basename_raw = os.path.basename(filename_raw)
+            frame_padded = basename_raw.replace("raw_", "").replace(".jpg", "")
+            frame = int(frame_padded)
 
-        stream_moments = []
-        for i in range(0, 3):
-            is_moment = True if random.randint(1, 30) == 1 else False
-            if is_moment:
-                se = ts_model.StreamMoment(
-                    stream_id=stream.stream_id,
-                    moment_id=f"e-{shortuuid.uuid()}",
-                    tag="kill" if random.randint(1, 2) == 1 else "knock",
-                    time=random.uniform(ss.time_in, ss.time_out),
-                    game="fortnite",
-                    segment=ss.segment,
-                )
-                stream_moments.append(se)
+            image_raw = Image.open(filename_raw)
+            width, height = image_raw.size
+            image_cropped = image_raw.crop((0.388040625 * width, 0.681944 * height, 0.5221875 * width, 0.7277777 * height))
 
-        # ------------------------------------------------
+            cropped_filename = f"{filename_prefix}/cropped_{frame_padded}.jpg"
+            image_cropped.save(cropped_filename)
+
+            image_cropped = cv2.imread(cropped_filename)
+            image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
+            _, mask = cv2.threshold(image_gray, 180, 255, cv2.THRESH_BINARY)
+            image_bitwise = cv2.bitwise_and(image_gray, image_gray, mask=mask)
+            _, image = cv2.threshold(image_bitwise, 180, 255, cv2.THRESH_BINARY)
+
+            kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+            image_dilated = cv2.dilate(image, kernel, iterations=9)
+
+            _, contours, _ = cv2.findContours(image_dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            for i, contour in enumerate(contours):
+                [x, y, w, h] = cv2.boundingRect(contour)
+                if w < 101 and h < 35:
+                    continue
+                cv2.rectangle(image_cropped, (x, y), (x + w, y + h), (255, 0, 255), 2)
+                image_contour = image_cropped[y : y + h, x : x + w]
+                contour_filename = f"{filename_prefix}/contour_{frame_padded}.jpg"
+                cv2.imwrite(contour_filename , image_contour)
 
         # save stream_moments
-        ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
+        # ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
 
         # save stream_segment
         ss._status_analyze = ts_model.Status.READY
         ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
 
         # clean up
-        ts_file.delete(media_filename)
+        shutil.rmtree(filename_prefix)
 
         logger.info("success")
         return True
