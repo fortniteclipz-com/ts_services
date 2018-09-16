@@ -6,6 +6,7 @@ import ts_aws.sqs.stream__initialize
 import ts_aws.sqs.stream_segment__analyze
 import ts_aws.sqs.stream_segment__download
 import ts_file
+import ts_libs
 import ts_logger
 import ts_model.Exception
 import ts_model.Status
@@ -25,6 +26,7 @@ import PIL.Image
 import pytesseract
 
 logger = ts_logger.get(__name__)
+ts_libs.init()
 
 def run(event, context):
     try:
@@ -84,6 +86,7 @@ def run(event, context):
         timestamp = 0
         duration = (ss.time_out - ss.time_in) * 1000
         while timestamp <= duration:
+            logger.info("capturing frame", frame=frame, timestamp=timestamp)
             video_capture.set(cv2.CAP_PROP_POS_MSEC, timestamp)
             success, image = video_capture.read()
             if success == True:
@@ -97,6 +100,7 @@ def run(event, context):
             basename_raw = os.path.basename(filename_raw)
             frame_padded = basename_raw.replace("raw_", "").replace(".jpg", "")
             frame = int(frame_padded)
+            logger.info("analyzing frame", frame=frame)
 
             image_raw = PIL.Image.open(filename_raw)
             width, height = image_raw.size
