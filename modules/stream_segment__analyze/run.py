@@ -7,7 +7,6 @@ import ts_aws.sqs.stream_segment__analyze
 import ts_aws.sqs.stream_segment__download
 import ts_file
 import ts_logger
-import ts_media
 import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
@@ -15,9 +14,7 @@ import ts_model.StreamMoment
 
 import glob
 import json
-import math
 import os
-import random
 import shortuuid
 import shutil
 import traceback
@@ -28,7 +25,6 @@ import PIL.Image
 import pytesseract
 
 logger = ts_logger.get(__name__)
-ts_media.init_ff_libs()
 
 def run(event, context):
     try:
@@ -77,13 +73,24 @@ def run(event, context):
 
         stream_moments = []
         filename_prefix = f"/tmp/{ss.stream_id}/{ss.padded}"
+        os.makedirs(os.path.dirname(filename_prefix), exist_ok=True)
 
         media_key = f"streams/{ss.stream_id}/{ss.padded}.ts"
         media_filename = f"{filename_prefix}/{ss.padded}.ts"
         ts_aws.s3.download_file(media_key, media_filename)
 
-        filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
-        ts_media.thumbnail_media_video(media_filename, filename_raw_pattern)
+        video_capture = cv2.VideoCapture(media_filename)
+        frame = 0
+        timestamp = 0
+        duration = (ss.time_out - ss.time_in) * 1000
+        while timestamp <= duration:
+            video_capture.set(cv2.CAP_PROP_POS_MSEC, timestamp)
+            success, image = video_capture.read()
+            if success == True:
+                frame_padded = str(frame).zfill(6)
+                cv2.imwrite(f"{filename_prefix}/raw_{frame_padded}.jpg", image)
+            frame += 1
+            timestamp += 500
 
         filenames_raw = sorted(glob.glob(f"{filename_prefix}/raw_*.jpg"))
         for filename_raw in filenames_raw:
