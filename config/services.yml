@@ -82,7 +82,6 @@ service--stream-segment--analyze:
   package:
     include:
       - modules/stream_segment__analyze/run.py
-      - libs/ffmpeg
       - libs/tesseract/**
 
 service--stream-segment--download:
