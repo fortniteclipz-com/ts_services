@@ -82,11 +82,7 @@ service--stream-segment--analyze:
   package:
     include:
       - modules/stream_segment__analyze/run.py
-      - libs/tesseract/lib/liblept.so.5
-      - libs/tesseract/lib/libpng12.so.0
-      - libs/tesseract/lib/libtesseract.so.3
-      - libs/tesseract/tessdata/eng.traineddata
-      - libs/tesseract/tesseract
+      - libs/tesseract/**
 
 service--stream-segment--download:
   handler: run.run
