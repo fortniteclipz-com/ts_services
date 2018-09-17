@@ -18,6 +18,7 @@ import json
 import os
 import shortuuid
 import shutil
+import subprocess
 import traceback
 
 import cv2
@@ -81,19 +82,10 @@ def run(event, context):
         media_filename = f"{filename_prefix}/{ss.padded}.ts"
         ts_aws.s3.download_file(media_key, media_filename)
 
-        video_capture = cv2.VideoCapture(media_filename)
-        frame = 0
-        timestamp = 0
-        duration = (ss.time_out - ss.time_in) * 1000
-        while timestamp <= duration:
-            logger.info("capturing frame", frame=frame, timestamp=timestamp)
-            video_capture.set(cv2.CAP_PROP_POS_MSEC, timestamp)
-            success, image = video_capture.read()
-            if success == True:
-                frame_padded = str(frame).zfill(6)
-                cv2.imwrite(f"{filename_prefix}/raw_{frame_padded}.jpg", image)
-            frame += 1
-            timestamp += 500
+        filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
+        os.makedirs(os.path.dirname(filename_raw_pattern), exist_ok=True)
+        cmd = f"ffmpeg -i {media_filename} -vf fps=2 -q:v 1 {filename_raw_pattern}"
+        p = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
 
         filenames_raw = sorted(glob.glob(f"{filename_prefix}/raw_*.jpg"))
         for filename_raw in filenames_raw:
