@@ -87,6 +87,20 @@ def run(event, context):
         cmd = f"ffmpeg -i {media_filename} -vf fps=2 -q:v 1 {filename_raw_pattern}"
         p = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
 
+        video_capture = cv2.VideoCapture(media_filename)
+        frame = 0
+        timestamp = 0
+        duration = (ss.time_out - ss.time_in) * 1000
+        while timestamp <= duration:
+            logger.info("capturing frame", frame=frame, timestamp=timestamp)
+            video_capture.set(cv2.CAP_PROP_POS_MSEC, timestamp)
+            success, image = video_capture.read()
+            if success == True:
+                frame_padded = str(frame).zfill(6)
+                cv2.imwrite(f"{filename_prefix}/raw_{frame_padded}.jpg", image)
+            frame += 1
+            timestamp += 500
+
         filenames_raw = sorted(glob.glob(f"{filename_prefix}/raw_*.jpg"))
         for filename_raw in filenames_raw:
             basename_raw = os.path.basename(filename_raw)
