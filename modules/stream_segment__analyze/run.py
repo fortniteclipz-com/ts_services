@@ -82,6 +82,7 @@ def run(event, context):
         media_filename = f"{filename_prefix}/{ss.padded}.ts"
         ts_aws.s3.download_file(media_key, media_filename)
 
+        logger.info("creating frames")
         filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
         os.makedirs(os.path.dirname(filename_raw_pattern), exist_ok=True)
         cmd = f"ffmpeg -i {media_filename} -vf fps=2 -q:v 1 {filename_raw_pattern}"
@@ -96,7 +97,7 @@ def run(event, context):
             frame = int(frame_padded)
             logger.info("analyzing frame", frame=frame)
 
-            ts_aws.s3.upload_file_thumbnails(filename_raw, f"{ss.stream_id}/{basename_raw}")
+            ts_aws.s3.upload_file_thumbnails(filename_raw, f"{ss.stream_id}/{ss.segment}/{basename_raw}")
 
             image_raw = PIL.Image.open(filename_raw)
             width, height = image_raw.size
