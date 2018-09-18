@@ -5,7 +5,6 @@ import ts_aws.s3
 import ts_aws.sqs.stream__initialize
 import ts_aws.sqs.stream_segment__analyze
 import ts_aws.sqs.stream_segment__download
-import ts_file
 import ts_libs
 import ts_logger
 import ts_model.Exception
