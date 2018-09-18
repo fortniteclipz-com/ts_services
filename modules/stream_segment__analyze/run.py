@@ -95,9 +95,7 @@ def run(event, context):
             basename_raw = os.path.basename(filename_raw)
             frame_padded = basename_raw.replace("raw_", "").replace(".jpg", "")
             frame = int(frame_padded)
-            logger.info("analyzing frame", frame=frame)
-
-            ts_aws.s3.upload_file_thumbnails(filename_raw, f"{ss.stream_id}/{ss.segment}/{basename_raw}")
+            logger.info("analyzing frame", frame=frame, filename_raw=filename_raw)
 
             image_raw = PIL.Image.open(filename_raw)
             width, height = image_raw.size
