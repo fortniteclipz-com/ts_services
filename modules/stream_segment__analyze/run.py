@@ -84,7 +84,6 @@ def run(event, context):
 
         logger.info("creating frames")
         filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
-        os.makedirs(os.path.dirname(filename_raw_pattern), exist_ok=True)
         cmd = f"ffmpeg -i {media_filename} -vf fps=2 -q:v 1 {filename_raw_pattern} < /dev/null"
         p = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
 
