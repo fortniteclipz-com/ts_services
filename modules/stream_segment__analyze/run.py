@@ -111,53 +111,48 @@ def run(event, context):
             logger.info("analyzing frame", frame=frame, filename_raw=filename_raw)
 
             image_raw = cv2.imread(filename_raw)
+
             height, width, _ = image_raw.shape
             top = CROP['fortnite'][stream.height]['top']
             bottom = CROP['fortnite'][stream.height]['bottom']
             left = CROP['fortnite'][stream.height]['left']
             right = CROP['fortnite'][stream.height]['right']
             image_cropped = image_raw[top:bottom, left:right]
+
             image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
+            _, image_threshold = cv2.threshold(image_gray, 240, 255, cv2.THRESH_BINARY)
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+            image_dilated = cv2.dilate(image_threshold, kernel, iterations=1)
 
             # saving for dev
-            # gray_filename = f"{filename_prefix}/gray_{frame_padded}.jpg"
-            # cv2.imwrite(gray_filename, image_gray)
+            # dilated_filename = f"{filename_prefix}/dilated_{frame_padded}.jpg"
+            # cv2.imwrite(dilated_filename, image_dilated)
 
-            _, contours, _ = cv2.findContours(image_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-            for i, contour in enumerate(contours):
-                [x, y, w, h] = cv2.boundingRect(contour)
-                cv2.rectangle(image_gray, (x, y), (x + w, y + h), (255, 0, 255), 2)
-                image_contour = image_gray[y : y + h, x : x + w]
+            texts = pytesseract.image_to_string(image_dilated).split()
+            for t in texts:
+                if Levenshtein.ratio(t, u"KNOCKED") > .7:
+                    sm = ts_model.StreamMoment(
+                        stream_id=ss.stream_id,
+                        moment_id=f"mo-{shortuuid.uuid()}",
+                        tag="knocked",
+                        time=(frame * 0.5) + ss.stream_time_in,
+                        game="fortnite",
+                        segment=ss.segment,
+                    )
+                    logger.info("knocked", stream_moment=sm)
+                    stream_moments.append(sm)
 
-                # saving for dev
-                # contour_filename = f"{filename_prefix}/contour_{frame_padded}_{i}.jpg"
-                # cv2.imwrite(contour_filename, image_contour)
-
-                texts = pytesseract.image_to_string(image_contour).split()
-                for t in texts:
-                    if Levenshtein.ratio(t, u"KNOCKED") > .7:
-                        sm = ts_model.StreamMoment(
-                            stream_id=ss.stream_id,
-                            moment_id=f"mo-{shortuuid.uuid()}",
-                            tag="knocked",
-                            time=(frame * 0.5) + ss.stream_time_in,
-                            game="fortnite",
-                            segment=ss.segment,
-                        )
-                        logger.info("knocked", stream_moment=sm)
-                        stream_moments.append(sm)
-
-                    if Levenshtein.ratio(t, u"ELIMINATED") > .7:
-                        sm = ts_model.StreamMoment(
-                            stream_id=ss.stream_id,
-                            moment_id=f"mo-{shortuuid.uuid()}",
-                            tag="eliminated",
-                            time=(frame * 0.5) + ss.stream_time_in,
-                            game="fortnite",
-                            segment=ss.segment,
-                        )
-                        logger.info("eliminated", stream_moment=sm)
-                        stream_moments.append(sm)
+                if Levenshtein.ratio(t, u"ELIMINATED") > .7:
+                    sm = ts_model.StreamMoment(
+                        stream_id=ss.stream_id,
+                        moment_id=f"mo-{shortuuid.uuid()}",
+                        tag="eliminated",
+                        time=(frame * 0.5) + ss.stream_time_in,
+                        game="fortnite",
+                        segment=ss.segment,
+                    )
+                    logger.info("eliminated", stream_moment=sm)
+                    stream_moments.append(sm)
 
         # save stream_moments
         ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
