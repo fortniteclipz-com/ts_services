@@ -22,11 +22,28 @@ import traceback
 
 import cv2
 import Levenshtein
-import PIL.Image
 import pytesseract
 
 logger = ts_logger.get(__name__)
 ts_libs.init()
+
+RESOLUTION = "720p"
+CROP = {
+    'fortnite': {
+        '1080p': {
+            'top': 735,
+            'bottom': 785,
+            'left': 700,
+            'right': 1200,
+        },
+        '720p': {
+            'top': 450,
+            'bottom': 500,
+            'left': 450,
+            'right': 850,
+        }
+    }
+}
 
 def run(event, context):
     try:
@@ -95,35 +112,30 @@ def run(event, context):
             frame = int(frame_padded)
             logger.info("analyzing frame", frame=frame, filename_raw=filename_raw)
 
-            image_raw = PIL.Image.open(filename_raw)
-            width, height = image_raw.size
-            image_cropped = image_raw.crop((0.388040625 * width, 0.681944 * height, 0.5221875 * width, 0.7277777 * height))
-
-            cropped_filename = f"{filename_prefix}/cropped_{frame_padded}.jpg"
-            image_cropped.save(cropped_filename)
-
-            image_cropped = cv2.imread(cropped_filename)
+            image_raw = cv2.imread(filename_raw)
+            height, width, _ = image_raw.shape
+            top = CROP['fortnite'][RESOLUTION]['top']
+            bottom = CROP['fortnite'][RESOLUTION]['bottom']
+            left = CROP['fortnite'][RESOLUTION]['left']
+            right = CROP['fortnite'][RESOLUTION]['right']
+            image_cropped = image_raw[top:bottom, left:right]
             image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
-            _, mask = cv2.threshold(image_gray, 180, 255, cv2.THRESH_BINARY)
-            image_bitwise = cv2.bitwise_and(image_gray, image_gray, mask=mask)
-            _, image = cv2.threshold(image_bitwise, 180, 255, cv2.THRESH_BINARY)
 
-            kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
-            image_dilated = cv2.dilate(image, kernel, iterations=9)
+            # saving for dev
+            # gray_filename = f"{filename_prefix}/gray_{frame_padded}.jpg"
+            # cv2.imwrite(gray_filename, image_gray)
 
-            _, contours, _ = cv2.findContours(image_dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            _, contours, _ = cv2.findContours(image_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             for i, contour in enumerate(contours):
                 [x, y, w, h] = cv2.boundingRect(contour)
-                if w < 101 and h < 35:
-                    continue
-                cv2.rectangle(image_cropped, (x, y), (x + w, y + h), (255, 0, 255), 2)
-                image_contour = image_cropped[y : y + h, x : x + w]
+                cv2.rectangle(image_gray, (x, y), (x + w, y + h), (255, 0, 255), 2)
+                image_contour = image_gray[y : y + h, x : x + w]
 
-                contour_filename = f"{filename_prefix}/contour_{frame_padded}_{i}.jpg"
-                cv2.imwrite(contour_filename, image_contour)
+                # saving for dev
+                # contour_filename = f"{filename_prefix}/contour_{frame_padded}_{i}.jpg"
+                # cv2.imwrite(contour_filename, image_contour)
 
-                image_text = PIL.Image.open(contour_filename)
-                texts = pytesseract.image_to_string(image_text).split()
+                texts = pytesseract.image_to_string(image_contour).split()
                 for t in texts:
                     if Levenshtein.ratio(t, u"KNOCKED") > .7:
                         sm = ts_model.StreamMoment(
