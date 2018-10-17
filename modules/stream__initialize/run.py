@@ -81,9 +81,9 @@ def run(event, context):
                     ss.media_url = f"{twitch_stream_url_prefix}/{ss_segment_raw}"
 
                 if ss.segment is not None and ss_duration is not None:
-                    ss.time_in = timestamp
+                    ss.stream_time_in = timestamp
                     timestamp += ss_duration
-                    ss.time_out = timestamp
+                    ss.stream_time_out = timestamp
                     stream_segments.append(ss)
                     ss = None
                     ss_duration = None

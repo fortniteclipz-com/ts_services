@@ -27,16 +27,15 @@ import pytesseract
 logger = ts_logger.get(__name__)
 ts_libs.init()
 
-RESOLUTION = "720p"
 CROP = {
     'fortnite': {
-        '1080p': {
+        '1080': {
             'top': 735,
             'bottom': 785,
             'left': 700,
             'right': 1200,
         },
-        '720p': {
+        '720': {
             'top': 450,
             'bottom': 500,
             'left': 450,
@@ -114,10 +113,10 @@ def run(event, context):
 
             image_raw = cv2.imread(filename_raw)
             height, width, _ = image_raw.shape
-            top = CROP['fortnite'][RESOLUTION]['top']
-            bottom = CROP['fortnite'][RESOLUTION]['bottom']
-            left = CROP['fortnite'][RESOLUTION]['left']
-            right = CROP['fortnite'][RESOLUTION]['right']
+            top = CROP['fortnite']['1080p']['top']
+            bottom = CROP['fortnite']['1080p']['bottom']
+            left = CROP['fortnite']['1080p']['left']
+            right = CROP['fortnite']['1080p']['right']
             image_cropped = image_raw[top:bottom, left:right]
             image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
 
@@ -142,7 +141,7 @@ def run(event, context):
                             stream_id=ss.stream_id,
                             moment_id=f"mo-{shortuuid.uuid()}",
                             tag="knocked",
-                            time=(frame * 0.5) + ss.time_in,
+                            time=(frame * 0.5) + ss.stream_time_in,
                             game="fortnite",
                             segment=ss.segment,
                         )
@@ -154,7 +153,7 @@ def run(event, context):
                             stream_id=ss.stream_id,
                             moment_id=f"mo-{shortuuid.uuid()}",
                             tag="eliminated",
-                            time=(frame * 0.5) + ss.time_in,
+                            time=(frame * 0.5) + ss.stream_time_in,
                             game="fortnite",
                             segment=ss.segment,
                         )
