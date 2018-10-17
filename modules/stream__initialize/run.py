@@ -88,7 +88,9 @@ def run(event, context):
                     ss = None
                     ss_duration = None
 
-        # calculate fps
+        # calculate fps and resolution
+        width = 0
+        height = 0
         fps = 0
         first_ss = stream_segments[0]
         media_filename = f"/tmp/{first_ss.padded}.ts"
@@ -96,6 +98,8 @@ def run(event, context):
         metadata = FFProbe(media_filename)
         for s in metadata.streams:
             if s.is_video():
+                width = s.width
+                height = s.height
                 [top, bottom] = s.r_frame_rate.split("/")
                 fps = float(top) / float(bottom)
         ts_file.delete(media_filename)
@@ -106,6 +110,8 @@ def run(event, context):
         # save stream
         stream.playlist_url = twitch_stream.url
         stream.fps = fps
+        stream.width = width
+        stream.height = height
         stream._status_initialize = ts_model.Status.READY
         ts_aws.dynamodb.stream.save_stream(stream)
 
