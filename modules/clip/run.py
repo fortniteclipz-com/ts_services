@@ -105,16 +105,16 @@ def run(event, context):
             if is_last_cs and int(round(css.stream_time_in)) == int(round(clip.time_out)):
                 continue
 
-            time_in = clip.time_in - css.stream_time_in  if is_first_cs else None
-            time_out = clip.time_out - css.stream_time_in if is_last_cs else None
+            segment_time_in = clip.time_in - css.stream_time_in  if is_first_cs else None
+            segment_time_out = clip.time_out - css.stream_time_in if is_last_cs else None
 
             cs = ts_model.ClipSegment(
                 clip_id=clip.clip_id,
                 segment=css.segment,
                 stream_id=clip.stream_id,
                 media_key=css.media_key,
-                segment_time_in=time_in,
-                segment_time_out=time_out,
+                segment_time_in=segment_time_in,
+                segment_time_out=segment_time_out,
             )
             clip_segments.append(cs)
 
