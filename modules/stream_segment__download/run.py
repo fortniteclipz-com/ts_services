@@ -56,7 +56,7 @@ def run(event, context):
         ts_http.download_file(ss.media_url, media_filename)
 
         # upload segment to s3
-        media_key = ss.media_key
+        media_key = f"streams/{stream_id}/{ss.padded}.ts"
         ts_aws.s3.upload_file(media_filename, media_key)
 
         # save stream_segment

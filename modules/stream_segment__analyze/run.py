@@ -93,9 +93,8 @@ def run(event, context):
         filename_prefix = f"/tmp/{ss.stream_id}/{ss.padded}"
         os.makedirs(os.path.dirname(filename_prefix), exist_ok=True)
 
-        media_key = ss.media_key
         media_filename = f"{filename_prefix}/{ss.padded}.ts"
-        ts_aws.s3.download_file(media_key, media_filename)
+        ts_aws.s3.download_file(ss.media_key, media_filename)
 
         logger.info("creating frames")
         filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
@@ -113,10 +112,10 @@ def run(event, context):
 
             image_raw = cv2.imread(filename_raw)
             height, width, _ = image_raw.shape
-            top = CROP['fortnite']['1080p']['top']
-            bottom = CROP['fortnite']['1080p']['bottom']
-            left = CROP['fortnite']['1080p']['left']
-            right = CROP['fortnite']['1080p']['right']
+            top = CROP['fortnite'][stream.height]['top']
+            bottom = CROP['fortnite'][stream.height]['bottom']
+            left = CROP['fortnite'][stream.height]['left']
+            right = CROP['fortnite'][stream.height]['right']
             image_cropped = image_raw[top:bottom, left:right]
             image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
 

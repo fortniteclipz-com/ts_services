@@ -5,14 +5,15 @@ events = [{
     'detail': {
         'status': 'COMPLETE',
         'userMetadata': {
-            'clip_id': 'c-7khkE2rBch69oDtrAZJSXd'
+            # 'clip_id': 'c-qCuPKxsMpYPMPqjEzUJRsV',
+            'montage_id': 'm-G29f2B9HBgGP4YHt8fWEwG',
         },
     }
 # }, {
 #     'detail': {
 #         'status': 'ERROR',
 #         'userMetadata': {
-#             'montage_id': 'm-TqycrB6MvyKzwpXmBAFE5E'
+#             'montage_id': 'm-G29f2B9HBgGP4YHt8fWEwG'
 #         }
 #     }
 }]
