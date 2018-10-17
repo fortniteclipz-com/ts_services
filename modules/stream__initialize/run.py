@@ -87,6 +87,7 @@ def run(event, context):
                     stream_segments.append(ss)
                     ss = None
                     ss_duration = None
+        ts_file.delete(playlist_filename)
 
         # calculate fps and resolution
         width = 0
