@@ -27,23 +27,6 @@ import pytesseract
 logger = ts_logger.get(__name__)
 ts_libs.init()
 
-CROP = {
-    'fortnite': {
-        '1080': {
-            'top': 735,
-            'bottom': 785,
-            'left': 700,
-            'right': 1200,
-        },
-        '720': {
-            'top': 450,
-            'bottom': 500,
-            'left': 450,
-            'right': 850,
-        }
-    }
-}
-
 def run(event, context):
     try:
         logger.info("start", event=event, context=context)
@@ -111,15 +94,7 @@ def run(event, context):
             logger.info("analyzing frame", frame=frame, filename_raw=filename_raw)
 
             image_raw = cv2.imread(filename_raw)
-
-            height, width, _ = image_raw.shape
-            top = CROP['fortnite'][stream.height]['top']
-            bottom = CROP['fortnite'][stream.height]['bottom']
-            left = CROP['fortnite'][stream.height]['left']
-            right = CROP['fortnite'][stream.height]['right']
-            image_cropped = image_raw[top:bottom, left:right]
-
-            image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
+            image_gray = cv2.cvtColor(image_raw, cv2.COLOR_BGR2GRAY)
             _, image_threshold = cv2.threshold(image_gray, 240, 255, cv2.THRESH_BINARY)
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
             image_dilated = cv2.dilate(image_threshold, kernel, iterations=1)

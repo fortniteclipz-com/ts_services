@@ -110,6 +110,7 @@ def run(event, context):
 
         # save stream
         stream.playlist_url = twitch_stream.url
+        stream.duration = timestamp
         stream.fps = fps
         stream.width = width
         stream.height = height
