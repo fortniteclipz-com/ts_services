@@ -94,7 +94,18 @@ def run(event, context):
             logger.info("analyzing frame", frame=frame, filename_raw=filename_raw)
 
             image_raw = cv2.imread(filename_raw)
-            image_gray = cv2.cvtColor(image_raw, cv2.COLOR_BGR2GRAY)
+            height, width, _ = image_raw.shape
+            top = int(height / 2)
+            bottom = height
+            left = int(width * 0.25)
+            right = int(width * 0.75)
+            image_cropped = image_raw[top:bottom, left:right]
+
+            # saving for dev
+            # cropped_filename = f"{filename_prefix}/cropped_{frame_padded}.jpg"
+            # cv2.imwrite(cropped_filename, image_cropped)
+
+            image_gray = cv2.cvtColor(image_cropped, cv2.COLOR_BGR2GRAY)
             _, image_threshold = cv2.threshold(image_gray, 240, 255, cv2.THRESH_BINARY)
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
             image_dilated = cv2.dilate(image_threshold, kernel, iterations=1)
