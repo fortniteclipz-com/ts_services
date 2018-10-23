@@ -33,8 +33,10 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_CREATED)
 
         # create montage_clips
+        montage_duration = 0
         montage_clips = []
         for index, clip in enumerate(clips):
+            montage_duration += clip.time_out - clip.time_in
             montage_clip = ts_model.MontageClip(
                 montage_id=montage.montage_id,
                 clip_id=clip.clip_id,
@@ -45,6 +47,8 @@ def run(event, context):
 
         ts_aws.mediaconvert.montage.create(montage, montage_clips)
         ts_aws.dynamodb.montage_clip.save_montage_clips(montage_clips)
+
+        montage.duration = montage_duration
         ts_aws.dynamodb.montage.save_montage(montage)
 
         logger.info("success", montage=montage)
