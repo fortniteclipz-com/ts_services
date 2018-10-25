@@ -32,6 +32,8 @@ def run(event, context):
         if not all(c._status == ts_model.Status.READY for c in clips):
             raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_CREATED)
 
+        clips.sort(key = lambda c: montage.clip_ids.index(c.clip_id))
+
         # create montage_clips
         montage_clips = []
         for index, clip in enumerate(clips):
