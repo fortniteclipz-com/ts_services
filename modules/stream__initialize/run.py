@@ -109,6 +109,7 @@ def run(event, context):
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
         # save stream
+        stream.user = "_".join(twitch_stream.url.split("/")[3].split("_")[1:-2])
         stream.playlist_url = twitch_stream.url
         stream.duration = timestamp
         stream.fps = fps
