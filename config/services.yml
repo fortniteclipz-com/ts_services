@@ -47,6 +47,7 @@ service--stream--analyze:
   module: modules/stream__analyze
   memorySize: 512
   timeout: 300
+  reservedConcurrency: 5
   events:
     - sqs:
         arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream--analyze.name}
@@ -61,6 +62,7 @@ service--stream--initialize:
   module: modules/stream__initialize
   memorySize: 512
   timeout: 300
+  reservedConcurrency: 5
   events:
     - sqs:
         arn: arn:aws:sqs:${self:custom.config.aws.region}:${self:custom.config.aws.account-id}:${self:custom.config.aws.sqs.stream--initialize.name}
