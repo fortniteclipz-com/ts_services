@@ -3,13 +3,13 @@ service: ts-service
 provider:
   name: aws
   profile: serverless-admin
-  region: ${self:custom.config.aws.region}
+  region: ${self:custom.config.region}
   runtime: python3.6
-  stage: dev
+  stage: ${self:custom.config.stage}
   versionFunctions: false
 
   iamRoleStatements:
-    ${self:custom.config.aws.iam.role-statement}
+    ${self:custom.config.iam.role-statement}
 
 package:
   individually: true
