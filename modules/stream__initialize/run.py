@@ -92,7 +92,8 @@ def run(event, context):
         # calculate fps and resolution
         width = 0
         height = 0
-        fps = 0
+        fps_numerator = 0
+        fps_denominator = 0
         first_ss = stream_segments[0]
         media_filename = f"/tmp/{first_ss.padded}.ts"
         ts_http.download_file(first_ss.media_url, media_filename)
@@ -101,8 +102,7 @@ def run(event, context):
             if s.is_video():
                 width = s.width
                 height = s.height
-                [top, bottom] = s.r_frame_rate.split("/")
-                fps = float(top) / float(bottom)
+                [fps_numerator, fps_denominator] = s.r_frame_rate.split("/")
         ts_file.delete(media_filename)
 
         # save stream_segments
@@ -112,7 +112,8 @@ def run(event, context):
         stream.user = "_".join(twitch_stream.url.split("/")[3].split("_")[1:-2])
         stream.playlist_url = twitch_stream.url
         stream.duration = timestamp
-        stream.fps = fps
+        stream.fps_numerator = int(fps_numerator)
+        stream.fps_denominator = int(fps_denominator)
         stream.width = width
         stream.height = height
         stream._status_initialize = ts_model.Status.READY
