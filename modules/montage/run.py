@@ -28,7 +28,7 @@ def run(event, context):
         if not all(c._status == ts_model.Status.READY for c in clips):
             raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_CREATED)
 
-        clips.sort(key = lambda c: montage.clip_ids.index(c.clip_id))
+        clips.sort(key=lambda c: montage.clip_ids.index(c.clip_id))
 
         ts_aws.mediaconvert.montage.create(montage, clips)
         ts_aws.dynamodb.montage.save_montage(montage)
