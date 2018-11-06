@@ -52,7 +52,7 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
         # check if all clip_stream_segments are ready to process
-        clip_stream_segments = ts_aws.dynamodb.clip.get_clip_stream_segments(stream, clip)
+        clip_stream_segments = ts_aws.dynamodb.stream_segment.get_clip_stream_segments(clip)
         ready = True
         jobs = []
         for css in clip_stream_segments:
@@ -108,9 +108,6 @@ def run(event, context):
             segment_time_out = clip.time_out - css.stream_time_in if is_last_cs else None
 
             cs = ts_model.ClipSegment(
-                clip_id=clip.clip_id,
-                segment=css.segment,
-                stream_id=clip.stream_id,
                 media_key=css.media_key,
                 segment_time_in=segment_time_in,
                 segment_time_out=segment_time_out,
