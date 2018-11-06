@@ -19,10 +19,8 @@ def run(event, context):
         montage_id = body['montage_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # check montage
         montage = ts_aws.dynamodb.montage.get_montage(montage_id)
 
-        # check if montage is already created
         if montage._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 

@@ -22,7 +22,6 @@ def run(event, context):
         stream_id = body['stream_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # get/initialize stream and check if stream is ready
         try:
             stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         except ts_model.Exception as e:

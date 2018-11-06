@@ -24,7 +24,6 @@ def run(event, context):
         segment = body['segment']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # get/initialize stream and check if stream is ready
         try:
             stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         except ts_model.Exception as e:
@@ -44,27 +43,21 @@ def run(event, context):
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        # check stream_segment
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
 
-        # check if stream_segment already downloaded
         if ss._status_download == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_DOWNLOADED)
 
-        # download segment from twitch
         media_filename = f"/tmp/{ss.padded}.ts"
         ts_http.download_file(ss.media_url, media_filename)
 
-        # upload segment to s3
         media_key = f"streams/{stream_id}/{ss.padded}.ts"
         ts_aws.s3.upload_file(media_filename, media_key)
 
-        # save stream_segment
         ss.media_key = media_key
         ss._status_download = ts_model.Status.READY
         ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
 
-        # clean up
         ts_file.delete(media_filename)
 
         logger.info("success")

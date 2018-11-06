@@ -36,7 +36,6 @@ def run(event, context):
         segment = body['segment']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # get/initialize stream and check if stream is ready
         try:
             stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         except ts_model.Exception as e:
@@ -56,7 +55,6 @@ def run(event, context):
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        # get stream_segment
         ss = ts_aws.dynamodb.stream_segment.get_stream_segment(stream_id, segment)
 
         if ss._status_analyze == ts_model.Status.READY:
@@ -101,7 +99,6 @@ def run(event, context):
             right = int(width * 0.75)
             image_cropped = image_raw[top:bottom, left:right]
 
-            # saving for dev
             # cropped_filename = f"{filename_prefix}/cropped_{frame_padded}.jpg"
             # cv2.imwrite(cropped_filename, image_cropped)
 
@@ -110,7 +107,6 @@ def run(event, context):
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
             image_dilated = cv2.dilate(image_threshold, kernel, iterations=1)
 
-            # saving for dev
             # dilated_filename = f"{filename_prefix}/dilated_{frame_padded}.jpg"
             # cv2.imwrite(dilated_filename, image_dilated)
 
@@ -140,14 +136,11 @@ def run(event, context):
                     logger.info("eliminated", stream_moment=sm)
                     stream_moments.append(sm)
 
-        # save stream_moments
         ts_aws.dynamodb.stream_moment.save_stream_moments(stream_moments)
 
-        # save stream_segment
         ss._status_analyze = ts_model.Status.READY
         ts_aws.dynamodb.stream_segment.save_stream_segment(ss)
 
-        # clean up
         shutil.rmtree(filename_prefix)
 
         logger.info("success")

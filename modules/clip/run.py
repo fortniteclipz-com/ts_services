@@ -24,14 +24,11 @@ def run(event, context):
         clip_id = body['clip_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # get clip
         clip = ts_aws.dynamodb.clip.get_clip(clip_id)
 
-        # check if clip is already created
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_CREATED)
 
-        # get/initialize stream
         try:
             stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
         except ts_model.Exception as e:
@@ -51,7 +48,6 @@ def run(event, context):
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        # check if all clip_stream_segments are ready to process
         clip_stream_segments = ts_aws.dynamodb.stream_segment.get_clip_stream_segments(clip)
         ready = True
         jobs = []
@@ -93,7 +89,6 @@ def run(event, context):
         if not ready:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_DOWNLOADED)
 
-        # create clip segments
         clip_segments = []
         for i, css in enumerate(clip_stream_segments):
             is_first_cs = True if i == 0 else False
@@ -115,7 +110,6 @@ def run(event, context):
             clip_segments.append(cs)
 
         ts_aws.mediaconvert.clip.create(stream, clip, clip_segments)
-        # ts_aws.dynamodb.clip.save_clip(clip)
 
         logger.info("success")
         return True

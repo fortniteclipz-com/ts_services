@@ -27,7 +27,6 @@ def run(event, context):
         stream_id = body['stream_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        # get/initialize stream
         try:
             stream = ts_aws.dynamodb.stream.get_stream(stream_id)
         except ts_model.Exception as e:
@@ -39,11 +38,9 @@ def run(event, context):
                 )
                 ts_aws.dynamodb.stream.save_stream(stream)
 
-        # check if stream is already initialized
         if stream._status_initialize == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_INITIALIZED)
 
-        # get raw m3u8 url from twitch stream url
         try:
             twitch_url = f"https://twitch.tv/videos/{stream_id}"
             twitch_streams = streamlink.streams(twitch_url)
@@ -54,11 +51,9 @@ def run(event, context):
             logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             raise ts_model.Exception(ts_model.Exception.STREAM_ID__NOT_VALID) from None
 
-        # download raw m3u8
         playlist_filename = f"/tmp/playlist-raw.m3u8"
         ts_http.download_file(twitch_stream.url, playlist_filename)
 
-        # extract segment info from m3u8
         timestamp = 0
         stream_segments = []
         ss_duration = None
@@ -89,7 +84,6 @@ def run(event, context):
                     ss_duration = None
         ts_file.delete(playlist_filename)
 
-        # calculate fps and resolution
         width = 0
         height = 0
         fps_numerator = 0
@@ -105,10 +99,8 @@ def run(event, context):
                 [fps_numerator, fps_denominator] = s.r_frame_rate.split("/")
         ts_file.delete(media_filename)
 
-        # save stream_segments
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
-        # save stream
         stream.user = "_".join(twitch_stream.url.split("/")[3].split("_")[1:-2])
         stream.playlist_url = twitch_stream.url
         stream.duration = timestamp
