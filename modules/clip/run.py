@@ -1,5 +1,4 @@
 import ts_aws.dynamodb.clip
-import ts_aws.dynamodb.clip_segment
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.mediaconvert.clip
@@ -119,7 +118,6 @@ def run(event, context):
             clip_segments.append(cs)
 
         ts_aws.mediaconvert.clip.create(stream, clip, clip_segments)
-        ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
         # ts_aws.dynamodb.clip.save_clip(clip)
 
         logger.info("success")

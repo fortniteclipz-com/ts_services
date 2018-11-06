@@ -1,11 +1,9 @@
 import ts_aws.dynamodb.clip
 import ts_aws.dynamodb.montage
-import ts_aws.dynamodb.montage_clip
 import ts_aws.mediaconvert.montage
 import ts_aws.sqs.montage
 import ts_logger
 import ts_model.Exception
-import ts_model.MontageClip
 import ts_model.Status
 
 import json
@@ -34,19 +32,7 @@ def run(event, context):
 
         clips.sort(key = lambda c: montage.clip_ids.index(c.clip_id))
 
-        # create montage_clips
-        montage_clips = []
-        for index, clip in enumerate(clips):
-            montage_clip = ts_model.MontageClip(
-                montage_id=montage.montage_id,
-                clip_id=clip.clip_id,
-                clip_order=index,
-                media_key=clip.media_key,
-            )
-            montage_clips.append(montage_clip)
-
-        ts_aws.mediaconvert.montage.create(montage, montage_clips)
-        ts_aws.dynamodb.montage_clip.save_montage_clips(montage_clips)
+        ts_aws.mediaconvert.montage.create(montage, clips)
         ts_aws.dynamodb.montage.save_montage(montage)
 
         logger.info("success", montage=montage)
