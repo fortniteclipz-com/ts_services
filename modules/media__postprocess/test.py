@@ -4,18 +4,13 @@ import json
 events = [{
     'detail': {
         'status': 'COMPLETE',
-        'userMetadata': {
-            # 'clip_id': 'c-qCuPKxsMpYPMPqjEzUJRsV',
-            'montage_id': 'm-G29f2B9HBgGP4YHt8fWEwG',
-        },
+        'userMetadata': {'clip_id': "c-ouaq8FkAW2NKVouq32TqD6"},
     }
-# }, {
-#     'detail': {
-#         'status': 'ERROR',
-#         'userMetadata': {
-#             'montage_id': 'm-G29f2B9HBgGP4YHt8fWEwG'
-#         }
-#     }
+}, {
+    'detail': {
+        'status': 'COMPLETE',
+        'userMetadata': {'clip_id': "c-tVaLjtydbAwtypchvtHHni"},
+    }
 }]
 
 for event in events:
