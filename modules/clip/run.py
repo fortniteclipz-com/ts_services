@@ -120,7 +120,7 @@ def run(event, context):
 
         ts_aws.mediaconvert.clip.create(stream, clip, clip_segments)
         ts_aws.dynamodb.clip_segment.save_clip_segments(clip_segments)
-        ts_aws.dynamodb.clip.save_clip(clip)
+        # ts_aws.dynamodb.clip.save_clip(clip)
 
         logger.info("success")
         return True
