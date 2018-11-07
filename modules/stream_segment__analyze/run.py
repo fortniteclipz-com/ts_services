@@ -111,6 +111,11 @@ def run(event, context):
             # cv2.imwrite(dilated_filename, image_dilated)
 
             texts = pytesseract.image_to_string(image_dilated).split()
+            logger.info("texts", frame=frame, texts=texts)
+
+            if len(texts) > 5:
+                break;
+
             for t in texts:
                 if Levenshtein.ratio(t, u"KNOCKED") > .7:
                     sm = ts_model.StreamMoment(
