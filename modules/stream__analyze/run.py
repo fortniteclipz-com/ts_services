@@ -116,6 +116,7 @@ def run(event, context):
 
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM__ALREADY_ANALYZED,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
