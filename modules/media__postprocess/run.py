@@ -1,5 +1,6 @@
 import ts_aws.dynamodb.clip
 import ts_aws.dynamodb.montage
+import ts_aws.dynamodb.recent
 import ts_logger
 import ts_model.Status
 import ts_model.Exception
@@ -17,26 +18,27 @@ def run(event, context):
         status = event['detail']['status']
 
         if clip_id is not None:
-            media_type = "clip"
+            media_type = 'clip'
             media = ts_aws.dynamodb.clip.get_clip(clip_id)
             media_id = clip_id
         elif montage_id is not None:
-            media_type = "montage"
+            media_type = 'montage'
             media = ts_aws.dynamodb.montage.get_montage(montage_id)
             media_id = montage_id
         else:
             raise ts_model.Exception(ts_model.Exception.MEDIA__NOT_EXIST)
 
-        if status == "COMPLETE":
+        if status == 'COMPLETE':
             media._status = ts_model.Status.READY
             media.media_key = f"{media_type}s/{media_id}/{media_type}.mp4"
         else:
             media._status = ts_model.Status.NONE
 
-        if media_type == "clip":
+        if media_type == 'clip':
             ts_aws.dynamodb.clip.save_clip(media)
-        elif media_type == "montage":
+        elif media_type == 'montage':
             ts_aws.dynamodb.montage.save_montage(media)
+            ts_aws.dynamodb.recent.save_montage(media)
 
         logger.info("success")
         return True

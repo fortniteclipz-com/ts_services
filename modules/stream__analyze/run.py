@@ -1,3 +1,4 @@
+import ts_aws.dynamodb.recent
 import ts_aws.dynamodb.stream
 import ts_aws.dynamodb.stream_segment
 import ts_aws.sqs.stream__analyze
@@ -108,6 +109,7 @@ def run(event, context):
 
         stream._status_analyze = ts_model.Status.READY
         ts_aws.dynamodb.stream.save_stream(stream)
+        ts_aws.dynamodb.recent.save_stream(stream)
 
         logger.info("success")
         return True
