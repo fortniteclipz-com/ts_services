@@ -29,9 +29,7 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_CREATED)
 
         clips.sort(key=lambda c: montage.clip_ids.index(c.clip_id))
-
         ts_aws.mediaconvert.montage.create(montage, clips)
-        ts_aws.dynamodb.montage.save_montage(montage)
 
         logger.info("success", montage=montage)
         return True

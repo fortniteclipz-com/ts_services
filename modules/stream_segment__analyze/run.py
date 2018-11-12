@@ -123,7 +123,7 @@ def run(event, context):
                         moment_id=f"mo-{shortuuid.uuid()}",
                         tag="knocked",
                         time=(frame * 0.5) + ss.stream_time_in,
-                        game="fortnite",
+                        game=stream.game,
                         segment=ss.segment,
                     )
                     logger.info("knocked", stream_moment=sm)
@@ -135,7 +135,7 @@ def run(event, context):
                         moment_id=f"mo-{shortuuid.uuid()}",
                         tag="eliminated",
                         time=(frame * 0.5) + ss.stream_time_in,
-                        game="fortnite",
+                        game=stream.game,
                         segment=ss.segment,
                     )
                     logger.info("eliminated", stream_moment=sm)

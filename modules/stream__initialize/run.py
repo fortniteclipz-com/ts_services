@@ -62,7 +62,7 @@ def run(event, context):
             for line in f:
                 if ss is None:
                     ss = ts_model.StreamSegment(
-                        stream_id=stream_id
+                        stream_id=stream_id,
                     )
 
                 if "EXTINF" in line:
@@ -82,6 +82,7 @@ def run(event, context):
                     stream_segments.append(ss)
                     ss = None
                     ss_duration = None
+
         ts_file.delete(playlist_filename)
 
         width = 0
@@ -101,7 +102,7 @@ def run(event, context):
 
         ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
 
-        stream.user = "_".join(twitch_stream.url.split("/")[3].split("_")[1:-2])
+        stream.streamer = "_".join(twitch_stream.url.split("/")[3].split("_")[1:-2])
         stream.playlist_url = twitch_stream.url
         stream.duration = timestamp
         stream.fps_numerator = int(fps_numerator)
