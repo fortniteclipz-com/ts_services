@@ -93,8 +93,8 @@ def run(event, context):
 
             image_raw = cv2.imread(filename_raw)
             height, width, _ = image_raw.shape
-            top = int(height / 2)
-            bottom = height
+            top = int(height * 5 / 8)
+            bottom = int(height * 7 / 8)
             left = int(width * 0.25)
             right = int(width * 0.75)
             image_cropped = image_raw[top:bottom, left:right]
@@ -113,11 +113,11 @@ def run(event, context):
             texts = pytesseract.image_to_string(image_dilated).split()
             logger.info("texts", frame=frame, texts=texts)
 
-            if len(texts) > 5:
+            if len(texts) > 10:
                 break;
 
             for t in texts:
-                if Levenshtein.ratio(t, u"KNOCKED") > .7:
+                if Levenshtein.ratio(t, u"KNOCKED") > .5:
                     sm = ts_model.StreamMoment(
                         stream_id=ss.stream_id,
                         moment_id=f"mo-{shortuuid.uuid()}",
@@ -129,7 +129,7 @@ def run(event, context):
                     logger.info("knocked", stream_moment=sm)
                     stream_moments.append(sm)
 
-                if Levenshtein.ratio(t, u"ELIMINATED") > .7:
+                if Levenshtein.ratio(t, u"ELIMINATED") > .5:
                     sm = ts_model.StreamMoment(
                         stream_id=ss.stream_id,
                         moment_id=f"mo-{shortuuid.uuid()}",
