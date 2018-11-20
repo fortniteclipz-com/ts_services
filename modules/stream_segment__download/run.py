@@ -48,10 +48,11 @@ def run(event, context):
         if ss._status_download == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_DOWNLOADED)
 
-        media_filename = f"/tmp/{ss.padded}.ts"
+        segment_padded = str(ss.segment).zfill(6)
+        media_filename = f"/tmp/{segment_padded}.ts"
         ts_http.download_file(ss.media_url, media_filename)
 
-        media_key = f"streams/{stream_id}/{ss.padded}.ts"
+        media_key = f"streams/{stream_id}/{segment_padded}.ts"
         ts_aws.s3.upload_file(media_filename, media_key)
 
         ss.media_key = media_key

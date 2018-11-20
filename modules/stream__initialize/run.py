@@ -72,7 +72,6 @@ def run(event, context):
                 if ".ts" in line:
                     ss_segment_raw = line.strip()
                     ss.segment = int(''.join(filter(str.isdigit, ss_segment_raw)))
-                    ss.padded = str(ss.segment).zfill(6)
                     ss.media_url = f"{twitch_stream_url_prefix}/{ss_segment_raw}"
 
                 if ss.segment is not None and ss_duration is not None:
@@ -90,7 +89,8 @@ def run(event, context):
         fps_numerator = 0
         fps_denominator = 0
         first_ss = stream_segments[0]
-        media_filename = f"/tmp/{first_ss.padded}.ts"
+        segment_padded = str(first_ss.segment).zfill(6)
+        media_filename = f"/tmp/{segment_padded}.ts"
         ts_http.download_file(first_ss.media_url, media_filename)
         metadata = FFProbe(media_filename)
         for s in metadata.streams:

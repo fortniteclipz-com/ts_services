@@ -71,10 +71,11 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED)
 
         stream_moments = []
-        filename_prefix = f"/tmp/{ss.stream_id}/{ss.padded}"
+        segment_padded = str(ss.segment).zfill(6)
+        filename_prefix = f"/tmp/{ss.stream_id}/{segment_padded}"
         os.makedirs(os.path.dirname(filename_prefix), exist_ok=True)
 
-        media_filename = f"{filename_prefix}/{ss.padded}.ts"
+        media_filename = f"{filename_prefix}/{segment_padded}.ts"
         ts_aws.s3.download_file(ss.media_key, media_filename)
 
         logger.info("creating frames")
