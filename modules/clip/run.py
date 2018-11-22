@@ -1,6 +1,6 @@
-import ts_aws.dynamodb.clip
-import ts_aws.dynamodb.stream
-import ts_aws.dynamodb.stream_segment
+import ts_aws.rds.clip
+import ts_aws.rds.stream
+import ts_aws.rds.stream_segment
 import ts_aws.mediaconvert.clip
 import ts_aws.sqs.clip
 import ts_aws.sqs.stream__initialize
@@ -24,31 +24,31 @@ def run(event, context):
         clip_id = body['clip_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        clip = ts_aws.dynamodb.clip.get_clip(clip_id)
+        clip = ts_aws.rds.clip.get_clip(clip_id)
 
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_CREATED)
 
         try:
-            stream = ts_aws.dynamodb.stream.get_stream(clip.stream_id)
+            stream = ts_aws.rds.stream.get_stream(clip.stream_id)
         except ts_model.Exception as e:
             if e.code == ts_model.Exception.STREAM__NOT_EXIST:
                 logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
                 stream = ts_model.Stream(
                     stream_id=clip.stream_id,
                 )
-                ts_aws.dynamodb.stream.save_stream(stream)
+                ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.INITIALIZING
-            ts_aws.dynamodb.stream.save_stream(stream)
+            ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
             })
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        clip_stream_segments = ts_aws.dynamodb.stream_segment.get_clip_stream_segments(clip)
+        clip_stream_segments = ts_aws.rds.stream_segment.get_clip_stream_segments(clip)
         ready = True
         jobs = []
         for css in clip_stream_segments:
@@ -69,7 +69,7 @@ def run(event, context):
 
         if len(jobs):
             stream_segments_to_save = list(map(lambda j: j['css'], jobs))
-            ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments_to_save)
+            ts_aws.rds.stream_segment.save_stream_segments(stream_segments_to_save)
 
             jobs_download = []
             for j in jobs:

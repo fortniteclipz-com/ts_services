@@ -3,10 +3,10 @@ import json
 
 bodies = [{
     'stream_id': "335886831",
-    'segment': 1,
+    'segment': 60,
 }, {
     'stream_id': "335886831",
-    'segment': 2,
+    'segment': 61,
 }, {
     'stream_id': "335886831",
     'segment': 3,

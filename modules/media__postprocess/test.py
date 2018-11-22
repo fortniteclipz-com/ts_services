@@ -4,12 +4,12 @@ import json
 events = [{
     'detail': {
         'status': 'COMPLETE',
-        'userMetadata': {'clip_id': "c-ouaq8FkAW2NKVouq32TqD6"},
+        'userMetadata': {'clip_id': "c-fqViqphZdTWmok88riJhQB"},
     }
 }, {
     'detail': {
         'status': 'COMPLETE',
-        'userMetadata': {'clip_id': "c-tVaLjtydbAwtypchvtHHni"},
+        'userMetadata': {'clip_id': "c-Kzgy87gomdhBdULmYj7kGh"},
     }
 }]
 
