@@ -1,5 +1,5 @@
-import ts_aws.dynamodb.stream
-import ts_aws.dynamodb.stream_segment
+import ts_aws.rds.stream
+import ts_aws.rds.stream_segment
 import ts_aws.sqs.stream__initialize
 import ts_file
 import ts_http
@@ -28,7 +28,7 @@ def run(event, context):
         receipt_handle = event['Records'][0].get('receiptHandle')
 
         try:
-            stream = ts_aws.dynamodb.stream.get_stream(stream_id)
+            stream = ts_aws.rds.stream.get_stream(stream_id)
         except ts_model.Exception as e:
             if e.code == ts_model.Exception.STREAM__NOT_EXIST:
                 logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
@@ -36,7 +36,7 @@ def run(event, context):
                     stream_id=stream_id,
                     _status_initialize=ts_model.Status.INITIALIZING,
                 )
-                ts_aws.dynamodb.stream.save_stream(stream)
+                ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_initialize == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_INITIALIZED)
@@ -100,7 +100,7 @@ def run(event, context):
                 [fps_numerator, fps_denominator] = s.r_frame_rate.split("/")
         ts_file.delete(media_filename)
 
-        ts_aws.dynamodb.stream_segment.save_stream_segments(stream_segments)
+        ts_aws.rds.stream_segment.save_stream_segments(stream_segments)
 
         stream.streamer = "_".join(twitch_stream.url.split("/")[3].split("_")[1:-2])
         stream.playlist_url = twitch_stream.url
@@ -110,7 +110,7 @@ def run(event, context):
         stream.width = width
         stream.height = height
         stream._status_initialize = ts_model.Status.READY
-        ts_aws.dynamodb.stream.save_stream(stream)
+        ts_aws.rds.stream.save_stream(stream)
 
         logger.info("success")
         return True
