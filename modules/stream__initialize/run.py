@@ -34,12 +34,14 @@ def run(event, context):
                 logger.error("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
                 stream = ts_model.Stream(
                     stream_id=stream_id,
-                    _status_initialize=ts_model.Status.INITIALIZING,
                 )
-                ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_initialize == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_INITIALIZED)
+
+        if stream._status_initialize == ts_model.Status.NONE:
+            stream._status_initialize = ts_model.Status.INITIALIZING
+            ts_aws.rds.stream.save_stream(stream)
 
         try:
             twitch_url = f"https://twitch.tv/videos/{stream_id}"

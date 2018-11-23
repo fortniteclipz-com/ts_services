@@ -37,7 +37,6 @@ def run(event, context):
                 stream = ts_model.Stream(
                     stream_id=clip.stream_id,
                 )
-                ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.INITIALIZING
@@ -45,6 +44,7 @@ def run(event, context):
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
             })
+
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
