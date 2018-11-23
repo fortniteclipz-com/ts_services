@@ -43,7 +43,7 @@ def run(event, context):
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        ss = ts_aws.rds.stream_segment.get_stream_segment(stream_id, segment)
+        ss = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
 
         if ss._status_download == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_DOWNLOADED)

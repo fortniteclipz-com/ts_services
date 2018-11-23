@@ -1,4 +1,4 @@
-import ts_aws.rds.clip
+import ts_aws.rds.montage_clip
 import ts_aws.rds.montage
 import ts_aws.mediaconvert.montage
 import ts_aws.sqs.montage
@@ -23,7 +23,7 @@ def run(event, context):
         if montage._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
-        montage_clips = ts_aws.rds.clip.get_montage_clips(montage)
+        montage_clips = ts_aws.rds.montage_clip.get_montage_clips(montage)
         if not all(c._status == ts_model.Status.READY for c in montage_clips):
             raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED)
 
