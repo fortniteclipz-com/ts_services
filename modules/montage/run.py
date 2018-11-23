@@ -1,5 +1,5 @@
-import ts_aws.dynamodb.clip
-import ts_aws.dynamodb.montage
+import ts_aws.rds.clip
+import ts_aws.rds.montage
 import ts_aws.mediaconvert.montage
 import ts_aws.sqs.montage
 import ts_logger
@@ -19,17 +19,15 @@ def run(event, context):
         montage_id = body['montage_id']
         receipt_handle = event['Records'][0].get('receiptHandle')
 
-        montage = ts_aws.dynamodb.montage.get_montage(montage_id)
-
+        montage = ts_aws.rds.montage.get_montage(montage_id)
         if montage._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
-        clips = ts_aws.dynamodb.clip.get_clips(montage.clip_ids)
-        if not all(c._status == ts_model.Status.READY for c in clips):
-            raise ts_model.Exception(ts_model.Exception.CLIPS__NOT_CREATED)
+        montage_clips = ts_aws.rds.clip.get_montage_clips(montage)
+        if not all(c._status == ts_model.Status.READY for c in montage_clips):
+            raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED)
 
-        clips.sort(key=lambda c: montage.clip_ids.index(c.clip_id))
-        ts_aws.mediaconvert.montage.create(montage, clips)
+        ts_aws.mediaconvert.montage.create(montage, montage_clips)
 
         logger.info("success", montage=montage)
         return True
