@@ -2,14 +2,8 @@ import run
 import json
 
 bodies = [{
-    'stream_id': "335886831",
-    'segment': 60,
-}, {
-    'stream_id': "335886831",
-    'segment': 61,
-}, {
-    'stream_id': "335886831",
-    'segment': 3,
+    'stream_id': "328002305",
+    'segment': 127,
 }]
 
 for body in bodies:

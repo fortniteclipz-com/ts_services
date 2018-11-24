@@ -127,11 +127,9 @@ def run(event, context):
                 if Levenshtein.ratio(t, u"KNOCKED") > .5:
                     sm = ts_model.StreamMoment(
                         stream_id=stream_segment.stream_id,
-                        moment_id=f"mo-{shortuuid.uuid()}",
-                        tag="knocked",
-                        time=(frame * 0.5) + stream_segment.stream_time_in,
-                        game=stream.game,
                         segment=stream_segment.segment,
+                        time=(frame * 0.5) + stream_segment.stream_time_in,
+                        tag="knocked",
                     )
                     logger.info("knocked", stream_moment=sm)
                     stream_moments.append(sm)
@@ -139,11 +137,9 @@ def run(event, context):
                 if Levenshtein.ratio(t, u"ELIMINATED") > .5:
                     sm = ts_model.StreamMoment(
                         stream_id=stream_segment.stream_id,
-                        moment_id=f"mo-{shortuuid.uuid()}",
-                        tag="eliminated",
-                        time=(frame * 0.5) + stream_segment.stream_time_in,
-                        game=stream.game,
                         segment=stream_segment.segment,
+                        time=(frame * 0.5) + stream_segment.stream_time_in,
+                        tag="eliminated",
                     )
                     logger.info("eliminated", stream_moment=sm)
                     stream_moments.append(sm)
