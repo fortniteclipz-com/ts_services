@@ -40,24 +40,29 @@ def run(event, context):
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
             })
+
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        ss = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
+        stream_segment = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
 
-        if ss._status_download == ts_model.Status.READY:
+        if stream_segment._status_download == ts_model.Status.NONE:
+            stream_segment._status_download = ts_model.Status.INITIALIZING
+            ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
+
+        if stream_segment._status_download == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_DOWNLOADED)
 
-        segment_padded = str(ss.segment).zfill(6)
+        segment_padded = str(stream_segment.segment).zfill(6)
         media_filename = f"/tmp/{segment_padded}.ts"
-        ts_http.download_file(ss.media_url, media_filename)
+        ts_http.download_file(stream_segment.media_url, media_filename)
 
         media_key = f"streams/{stream_id}/{segment_padded}.ts"
         ts_aws.s3.upload_file(media_filename, media_key)
 
-        ss.media_key = media_key
-        ss._status_download = ts_model.Status.READY
-        ts_aws.rds.stream_segment.save_stream_segment(ss)
+        stream_segment.media_key = media_key
+        stream_segment._status_download = ts_model.Status.READY
+        ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
 
         ts_file.delete(media_filename)
 

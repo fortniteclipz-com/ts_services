@@ -26,6 +26,10 @@ def run(event, context):
 
         clip = ts_aws.rds.clip.get_clip(clip_id)
 
+        if clip._status == ts_model.Status.NONE:
+            clip._status = ts_model.Status.INITIALIZING
+            clip = ts_aws.rds.clip.save_clip(clip)
+
         if clip._status == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_CREATED)
 

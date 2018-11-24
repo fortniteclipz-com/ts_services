@@ -52,31 +52,37 @@ def run(event, context):
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
             })
+
         if stream._status_initialize != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
-        ss = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
+        stream_segment = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
 
-        if ss._status_analyze == ts_model.Status.READY:
+        if stream_segment._status_analyze == ts_model.Status.NONE:
+            stream_segment._status_analyze = ts_model.Status.INITIALIZING
+            ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
+
+        if stream_segment._status_analyze == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_ANALYZED)
 
-        if ss._status_download == ts_model.Status.NONE:
-            ss._status_download = ts_model.Status.INITIALIZING
-            ts_aws.rds.stream_segment.save_stream_segment(ss)
-            ts_aws.sqs.stream_segment__download.send_message({
-                'stream_id': ss.stream_id,
-                'segment': ss.segment,
+        if stream_segment._status_download == ts_model.Status.NONE:
+            stream_segment._status_download = ts_model.Status.INITIALIZING
+            ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
+            ts_aws.sqs.stream_segment__download.send_mestream_segmentage({
+                'stream_id': stream_segment.stream_id,
+                'segment': stream_segment.segment,
             })
-        if ss._status_download != ts_model.Status.READY:
+
+        if stream_segment._status_download != ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__NOT_DOWNLOADED)
 
         stream_moments = []
-        segment_padded = str(ss.segment).zfill(6)
-        filename_prefix = f"/tmp/{ss.stream_id}/{segment_padded}"
+        segment_padded = str(stream_segment.segment).zfill(6)
+        filename_prefix = f"/tmp/{stream_segment.stream_id}/{segment_padded}"
         os.makedirs(os.path.dirname(filename_prefix), exist_ok=True)
 
         media_filename = f"{filename_prefix}/{segment_padded}.ts"
-        ts_aws.s3.download_file(ss.media_key, media_filename)
+        ts_aws.s3.download_file(stream_segment.media_key, media_filename)
 
         logger.info("creating frames")
         filename_raw_pattern = f"{filename_prefix}/raw_%06d.jpg"
@@ -120,32 +126,32 @@ def run(event, context):
             for t in texts:
                 if Levenshtein.ratio(t, u"KNOCKED") > .5:
                     sm = ts_model.StreamMoment(
-                        stream_id=ss.stream_id,
+                        stream_id=stream_segment.stream_id,
                         moment_id=f"mo-{shortuuid.uuid()}",
                         tag="knocked",
-                        time=(frame * 0.5) + ss.stream_time_in,
+                        time=(frame * 0.5) + stream_segment.stream_time_in,
                         game=stream.game,
-                        segment=ss.segment,
+                        segment=stream_segment.segment,
                     )
                     logger.info("knocked", stream_moment=sm)
                     stream_moments.append(sm)
 
                 if Levenshtein.ratio(t, u"ELIMINATED") > .5:
                     sm = ts_model.StreamMoment(
-                        stream_id=ss.stream_id,
+                        stream_id=stream_segment.stream_id,
                         moment_id=f"mo-{shortuuid.uuid()}",
                         tag="eliminated",
-                        time=(frame * 0.5) + ss.stream_time_in,
+                        time=(frame * 0.5) + stream_segment.stream_time_in,
                         game=stream.game,
-                        segment=ss.segment,
+                        segment=stream_segment.segment,
                     )
                     logger.info("eliminated", stream_moment=sm)
                     stream_moments.append(sm)
 
         ts_aws.rds.stream_moment.save_stream_moments(stream_moments)
 
-        ss._status_analyze = ts_model.Status.READY
-        ts_aws.rds.stream_segment.save_stream_segment(ss)
+        stream_segment._status_analyze = ts_model.Status.READY
+        ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
 
         shutil.rmtree(filename_prefix)
 

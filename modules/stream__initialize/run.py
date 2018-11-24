@@ -36,12 +36,12 @@ def run(event, context):
                     stream_id=stream_id,
                 )
 
-        if stream._status_initialize == ts_model.Status.READY:
-            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_INITIALIZED)
-
         if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.INITIALIZING
             ts_aws.rds.stream.save_stream(stream)
+
+        if stream._status_initialize == ts_model.Status.READY:
+            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_INITIALIZED)
 
         try:
             twitch_url = f"https://twitch.tv/videos/{stream_id}"
@@ -90,10 +90,10 @@ def run(event, context):
         height = 0
         fps_numerator = 0
         fps_denominator = 0
-        first_ss = stream_segments[0]
-        segment_padded = str(first_ss.segment).zfill(6)
+        first_stream_segment = stream_segments[0]
+        segment_padded = str(first_stream_segment.segment).zfill(6)
         media_filename = f"/tmp/{segment_padded}.ts"
-        ts_http.download_file(first_ss.media_url, media_filename)
+        ts_http.download_file(first_stream_segment.media_url, media_filename)
         metadata = FFProbe(media_filename)
         for s in metadata.streams:
             if s.is_video():
