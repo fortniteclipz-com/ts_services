@@ -3,18 +3,18 @@ import ts_aws.rds.stream_segment
 import ts_aws.sqs.stream__initialize
 import ts_file
 import ts_http
-import ts_logger
 import ts_libs
+import ts_logger
 import ts_model.Exception
 import ts_model.Status
 import ts_model.Stream
 import ts_model.StreamSegment
 
+import ffprobe3
 import json
 import re
 import streamlink
 import traceback
-from ffprobe3 import FFProbe
 
 logger = ts_logger.get(__name__)
 ts_libs.init()
@@ -94,7 +94,7 @@ def run(event, context):
         segment_padded = str(first_stream_segment.segment).zfill(6)
         media_filename = f"/tmp/{segment_padded}.ts"
         ts_http.download_file(first_stream_segment.media_url, media_filename)
-        metadata = FFProbe(media_filename)
+        metadata = ffprobe3.FFProbe(media_filename)
         for s in metadata.streams:
             if s.is_video():
                 width = s.width
