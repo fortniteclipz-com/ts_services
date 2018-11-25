@@ -1,5 +1,6 @@
 service--clip:
-  handler: modules/clip/run.run
+  handler: run.run
+  module: modules/clip
   memorySize: 256
   timeout: 30
   events:
@@ -8,7 +9,8 @@ service--clip:
         batchSize: 1
 
 service--media--postprocess:
-  handler: modules/media__postprocess/run.run
+  handler: run.run
+  module: modules/media__postprocess
   memorySize: 128
   timeout: 30
   events:
@@ -22,7 +24,8 @@ service--media--postprocess:
               - ERROR
 
 service--montage:
-  handler: modules/montage/run.run
+  handler: run.run
+  module: modules/montage
   memorySize: 256
   timeout: 30
   events:
@@ -31,7 +34,8 @@ service--montage:
         batchSize: 1
 
 service--stream--analyze:
-  handler: modules/stream__analyze/run.run
+  handler: run.run
+  module: modules/stream__analyze
   memorySize: 512
   timeout: 300
   reservedConcurrency: 5
@@ -73,7 +77,8 @@ service--stream-segment--analyze:
       - libs/tesseract/**
 
 service--stream-segment--download:
-  handler: modules/stream_segment__download/run.run
+  handler: run.run
+  module: modules/stream_segment__download
   memorySize: 1024
   timeout: 300
   events:
