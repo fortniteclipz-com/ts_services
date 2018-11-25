@@ -1,3 +1,8 @@
+try:
+  import unzip_requirements
+except ImportError:
+  pass
+
 import ts_aws.rds.montage_clip
 import ts_aws.rds.montage
 import ts_aws.mediaconvert.montage

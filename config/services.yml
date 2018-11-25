@@ -7,6 +7,9 @@ service--clip:
     - sqs:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.clip.name}-${self:custom.config.stage}
         batchSize: 1
+  package:
+    include:
+      - modules/clip/run.py
 
 service--media--postprocess:
   handler: run.run
@@ -22,6 +25,9 @@ service--media--postprocess:
             status:
               - COMPLETE
               - ERROR
+  package:
+    include:
+      - modules/media__postprocess/run.py
 
 service--montage:
   handler: run.run
@@ -32,6 +38,9 @@ service--montage:
     - sqs:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.montage.name}-${self:custom.config.stage}
         batchSize: 1
+  package:
+    include:
+      - modules/montage/run.py
 
 service--stream--analyze:
   handler: run.run
@@ -43,6 +52,10 @@ service--stream--analyze:
     - sqs:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream--analyze.name}-${self:custom.config.stage}
         batchSize: 1
+  package:
+    include:
+      - modules/stream__analyze/run.py
+
 
 service--stream--initialize:
   handler: run.run
@@ -55,7 +68,6 @@ service--stream--initialize:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream--initialize.name}-${self:custom.config.stage}
         batchSize: 1
   package:
-    individually: true
     include:
       - modules/stream__initialize/run.py
       - libs/ffprobe
@@ -70,7 +82,6 @@ service--stream-segment--analyze:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream-segment--analyze.name}-${self:custom.config.stage}
         batchSize: 1
   package:
-    individually: true
     include:
       - modules/stream_segment__analyze/run.py
       - libs/ffmpeg
@@ -85,3 +96,6 @@ service--stream-segment--download:
     - sqs:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream-segment--download.name}-${self:custom.config.stage}
         batchSize: 1
+  package:
+    include:
+      - modules/stream_segment__download/run.py
