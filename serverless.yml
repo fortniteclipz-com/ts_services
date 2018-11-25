@@ -12,9 +12,14 @@ provider:
     ${self:custom.config.iam.role-statement}
 
 package:
-  individually: true
   exclude:
     - '*/**'
+  include:
+    - modules/clip/run.py
+    - modules/media__postprocess/run.py
+    - modules/montage/run.py
+    - modules/stream__analyze/run.py
+    - modules/stream_segment__download/run.py
 
 plugins:
   - serverless-python-requirements
