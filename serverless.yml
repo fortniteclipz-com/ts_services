@@ -1,4 +1,4 @@
-service: ts-service
+service: ts-service-light
 
 provider:
   name: aws
@@ -12,9 +12,10 @@ provider:
     ${self:custom.config.iam.role-statement}
 
 package:
-  individually: true
   exclude:
     - '*/**'
+  include:
+    - modules/**/run.py
 
 plugins:
   - serverless-python-requirements
