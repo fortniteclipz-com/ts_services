@@ -1,8 +1,3 @@
-try:
-  import unzip_requirements
-except ImportError:
-  pass
-
 import ts_aws.rds.clip
 import ts_aws.rds.montage
 import ts_logger

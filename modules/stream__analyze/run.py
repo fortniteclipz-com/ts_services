@@ -1,8 +1,3 @@
-try:
-  import unzip_requirements
-except ImportError:
-  pass
-
 import ts_aws.rds.stream
 import ts_aws.rds.stream_segment
 import ts_aws.sqs.stream__analyze
