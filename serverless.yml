@@ -24,8 +24,9 @@ custom:
   pythonRequirements:
     dockerizePip: non-linux
     dockerSsh: true
+    pipCmdExtraArgs:
+          - --process-dependency-links
     slim: true
-    zip: true
 
 functions:
   - ${file(./config/services.yml)}
