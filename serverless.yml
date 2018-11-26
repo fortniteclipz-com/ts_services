@@ -24,8 +24,6 @@ custom:
   pythonRequirements:
     dockerizePip: non-linux
     dockerSsh: true
-    noDeploy:
-      - botocore
     pipCmdExtraArgs:
       - --process-dependency-links
     slim: true

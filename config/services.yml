@@ -56,7 +56,6 @@ service--stream--analyze:
     include:
       - modules/stream__analyze/run.py
 
-
 service--stream--initialize:
   handler: run.run
   module: modules/stream__initialize
