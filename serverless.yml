@@ -7,6 +7,8 @@ provider:
   runtime: python3.6
   stage: ${self:custom.config.stage}
   versionFunctions: false
+  environment:
+    ts_env: ${self:custom.config.stage}
 
   iamRoleStatements:
     ${self:custom.config.iam.role-statement}
@@ -21,7 +23,7 @@ plugins:
   - serverless-python-requirements
 
 custom:
-  config: ${file(../ts_shared/ts_config/ts_config/ts_config.yml)}
+  config: ${file(../ts_shared/ts_config/ts_config/ts_config_${opt:stage, 'dev'}.yml)}
   pythonRequirements:
     dockerizePip: non-linux
     dockerSsh: true
