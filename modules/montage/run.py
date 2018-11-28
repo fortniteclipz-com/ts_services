@@ -29,10 +29,20 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
         montage_clips = ts_aws.rds.montage_clip.get_montage_clips(montage)
-        if not all(c._status == ts_model.Status.READY for c in montage_clips):
+        if not all((c._status == ts_model.Status.READY or c._status == ts_model.Status.ERROR) for c in montage_clips):
             raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED)
 
         ts_aws.mediaconvert.montage.create(montage, montage_clips)
+
+        clips = 0
+        duration = 0;
+        for mc in montage_clips:
+            if mc._status == ts_model.Status.READY:
+                clips = clips + 1
+                duration = mc.time_out - mc.time_in
+        montage.clips = clips
+        montage.duration = duration
+        ts_aws.rds.montage.save_montage(montage)
 
         logger.info("success", montage=montage)
         return True

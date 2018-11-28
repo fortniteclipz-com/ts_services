@@ -31,7 +31,7 @@ def run(event, context):
             media._status = ts_model.Status.READY
             media.media_key = f"{media_type}s/{media_id}/{media_type}.mp4"
         else:
-            media._status = ts_model.Status.NONE
+            media._status = ts_model.Status.ERROR
 
         if media_type == 'clip':
             ts_aws.rds.clip.save_clip(media)
