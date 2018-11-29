@@ -1,4 +1,4 @@
-service: ts-service-light
+service: ts-services-light
 
 provider:
   name: aws
