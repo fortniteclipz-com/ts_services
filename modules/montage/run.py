@@ -6,6 +6,7 @@ import ts_logger
 import ts_model.Exception
 import ts_model.Status
 
+import functools
 import json
 import traceback
 
@@ -32,14 +33,19 @@ def run(event, context):
         if not all((c._status == ts_model.Status.READY or c._status == ts_model.Status.ERROR) for c in montage_clips):
             raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED)
 
+        def process(acc, mc):
+            mcs = acc[0]
+            clips = acc[1]
+            duration = acc[2]
+            if mc._status == ts_model.Status.READY:
+                mcs.append(mc)
+                clips = clips + 1
+                duration = duration + (mc.time_out - mc.time_in)
+            return (mcs, clips, duration)
+
+        (montage_clips, clips, duration) = functools.reduce(process, montage_clips, ([], 0 , 0))
         ts_aws.mediaconvert.montage.create(montage, montage_clips)
 
-        clips = 0
-        duration = 0;
-        for mc in montage_clips:
-            if mc._status == ts_model.Status.READY:
-                clips = clips + 1
-                duration = mc.time_out - mc.time_in
         montage.clips = clips
         montage.duration = duration
         ts_aws.rds.montage.save_montage(montage)
