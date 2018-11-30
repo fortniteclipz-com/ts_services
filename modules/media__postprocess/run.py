@@ -28,7 +28,7 @@ def run(event, context):
             raise ts_model.Exception(ts_model.Exception.MEDIA__NOT_EXIST)
 
         if status == 'COMPLETE':
-            media._status = ts_model.Status.READY
+            media._status = ts_model.Status.DONE
             media.media_key = f"{media_type}s/{media_id}/{media_type}.mp4"
         else:
             media._status = ts_model.Status.ERROR

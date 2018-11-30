@@ -30,7 +30,7 @@ def run(event, context):
             clip._status = ts_model.Status.WORKING
             clip = ts_aws.rds.clip.save_clip(clip)
 
-        if clip._status == ts_model.Status.READY:
+        if clip._status == ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_CREATED)
 
         try:
@@ -49,7 +49,7 @@ def run(event, context):
                 'stream_id': stream.stream_id,
             })
 
-        if stream._status_initialize != ts_model.Status.READY:
+        if stream._status_initialize != ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
         clip_stream_segments = ts_aws.rds.stream_segment.get_clip_stream_segments(clip)

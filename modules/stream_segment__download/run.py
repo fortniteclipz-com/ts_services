@@ -41,7 +41,7 @@ def run(event, context):
                 'stream_id': stream.stream_id,
             })
 
-        if stream._status_initialize != ts_model.Status.READY:
+        if stream._status_initialize != ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
         stream_segment = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
@@ -50,7 +50,7 @@ def run(event, context):
             stream_segment._status_download = ts_model.Status.WORKING
             ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
 
-        if stream_segment._status_download == ts_model.Status.READY:
+        if stream_segment._status_download == ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENT__ALREADY_DOWNLOADED)
 
         segment_padded = str(stream_segment.segment).zfill(6)
@@ -61,7 +61,7 @@ def run(event, context):
         ts_aws.s3.upload_file(media_filename, media_key)
 
         stream_segment.media_key = media_key
-        stream_segment._status_download = ts_model.Status.READY
+        stream_segment._status_download = ts_model.Status.DONE
         ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
 
         ts_file.delete(media_filename)

@@ -35,7 +35,7 @@ def run(event, context):
             stream._status_analyze = ts_model.Status.WORKING
             ts_aws.rds.stream.save_stream(stream)
 
-        if stream._status_analyze == ts_model.Status.READY:
+        if stream._status_analyze == ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_ANALYZED)
 
         if stream._status_initialize == ts_model.Status.NONE:
@@ -45,7 +45,7 @@ def run(event, context):
                 'stream_id': stream.stream_id,
             })
 
-        if stream._status_initialize != ts_model.Status.READY:
+        if stream._status_initialize != ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
 
         stream_segments = ts_aws.rds.stream_segment.get_stream_segments(stream)
@@ -110,7 +110,7 @@ def run(event, context):
         if not ready:
             raise ts_model.Exception(ts_model.Exception.STREAM__NOT_ANALYZED)
 
-        stream._status_analyze = ts_model.Status.READY
+        stream._status_analyze = ts_model.Status.DONE
         ts_aws.rds.stream.save_stream(stream)
 
         logger.info("success")

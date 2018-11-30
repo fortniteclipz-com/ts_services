@@ -26,18 +26,18 @@ def run(event, context):
             montage._status = ts_model.Status.WORKING
             montage = ts_aws.rds.montage.save_montage(montage)
 
-        if montage._status == ts_model.Status.READY:
+        if montage._status == ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
 
         montage_clips = ts_aws.rds.montage_clip.get_montage_clips(montage)
-        if not all((c._status == ts_model.Status.READY or c._status == ts_model.Status.ERROR) for c in montage_clips):
+        if not all((c._status == ts_model.Status.DONE or c._status == ts_model.Status.ERROR) for c in montage_clips):
             raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED)
 
         def process(acc, mc):
             mcs = acc[0]
             clips = acc[1]
             duration = acc[2]
-            if mc._status == ts_model.Status.READY:
+            if mc._status == ts_model.Status.DONE:
                 mcs.append(mc)
                 clips = clips + 1
                 duration = duration + (mc.time_out - mc.time_in)
