@@ -23,7 +23,7 @@ def run(event, context):
         montage = ts_aws.rds.montage.get_montage(montage_id)
 
         if montage._status == ts_model.Status.NONE:
-            montage._status = ts_model.Status.READYING
+            montage._status = ts_model.Status.WORKING
             montage = ts_aws.rds.montage.save_montage(montage)
 
         if montage._status == ts_model.Status.READY:

@@ -27,7 +27,7 @@ def run(event, context):
         clip = ts_aws.rds.clip.get_clip(clip_id)
 
         if clip._status == ts_model.Status.NONE:
-            clip._status = ts_model.Status.READYING
+            clip._status = ts_model.Status.WORKING
             clip = ts_aws.rds.clip.save_clip(clip)
 
         if clip._status == ts_model.Status.READY:
@@ -43,7 +43,7 @@ def run(event, context):
                 )
 
         if stream._status_initialize == ts_model.Status.NONE:
-            stream._status_initialize = ts_model.Status.READYING
+            stream._status_initialize = ts_model.Status.WORKING
             ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
@@ -58,12 +58,12 @@ def run(event, context):
         for css in clip_stream_segments:
             to_download = False
 
-            if css._status_download == ts_model.Status.READYING:
+            if css._status_download == ts_model.Status.WORKING:
                 ready = False
             if css._status_download == ts_model.Status.NONE:
                 ready = False
                 to_download = True
-                css._status_download = ts_model.Status.READYING
+                css._status_download = ts_model.Status.WORKING
 
             if to_download == True:
                 jobs.append({
