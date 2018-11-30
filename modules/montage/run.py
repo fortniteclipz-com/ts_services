@@ -27,11 +27,11 @@ def run(event, context):
             montage = ts_aws.rds.montage.save_montage(montage)
 
         if montage._status == ts_model.Status.DONE:
-            raise ts_model.Exception(ts_model.Exception.MONTAGE__ALREADY_CREATED)
+            raise ts_model.Exception(ts_model.Exception.MONTAGE__STATUS_DONE)
 
         montage_clips = ts_aws.rds.montage_clip.get_montage_clips(montage)
         if not all((c._status == ts_model.Status.DONE or c._status == ts_model.Status.ERROR) for c in montage_clips):
-            raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED)
+            raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__STATUS_READYING)
 
         def process(acc, mc):
             mcs = acc[0]
@@ -56,13 +56,13 @@ def run(event, context):
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.MONTAGE__NOT_EXIST,
-            ts_model.Exception.MONTAGE__ALREADY_CREATED,
+            ts_model.Exception.MONTAGE__STATUS_DONE,
             ts_model.Exception.MONTAGE_CLIPS__NOT_EXIST,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.MONTAGE_CLIPS__NOT_CREATED,
+            ts_model.Exception.MONTAGE_CLIPS__STATUS_READYING,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.montage.change_visibility(receipt_handle)

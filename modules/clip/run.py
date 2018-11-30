@@ -31,7 +31,7 @@ def run(event, context):
             clip = ts_aws.rds.clip.save_clip(clip)
 
         if clip._status == ts_model.Status.DONE:
-            raise ts_model.Exception(ts_model.Exception.CLIP__ALREADY_CREATED)
+            raise ts_model.Exception(ts_model.Exception.CLIP__STATUS_DONE)
 
         try:
             stream = ts_aws.rds.stream.get_stream(clip.stream_id)
@@ -50,7 +50,7 @@ def run(event, context):
             })
 
         if stream._status_initialize != ts_model.Status.DONE:
-            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_NONE)
 
         clip_stream_segments = ts_aws.rds.stream_segment.get_clip_stream_segments(clip)
         ready = True
@@ -91,7 +91,7 @@ def run(event, context):
                 jobs_download = []
 
         if not ready:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__NOT_DOWNLOADED)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NONE)
 
         clip_segments = []
         for i, css in enumerate(clip_stream_segments):
@@ -121,13 +121,13 @@ def run(event, context):
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.CLIP__NOT_EXIST,
-            ts_model.Exception.CLIP__ALREADY_CREATED,
+            ts_model.Exception.CLIP__STATUS_DONE,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.STREAM__NOT_INITIALIZED,
-            ts_model.Exception.STREAM_SEGMENTS__NOT_DOWNLOADED,
+            ts_model.Exception.STREAM__STATUS_INITIALIZE_NONE,
+            ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NONE,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.clip.change_visibility(receipt_handle)

@@ -36,7 +36,7 @@ def run(event, context):
             ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_analyze == ts_model.Status.DONE:
-            raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_ANALYZED)
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_ANALYZE_DONE)
 
         if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.WORKING
@@ -46,7 +46,7 @@ def run(event, context):
             })
 
         if stream._status_initialize != ts_model.Status.DONE:
-            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_INITIALIZED)
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_NONE)
 
         stream_segments = ts_aws.rds.stream_segment.get_stream_segments(stream)
         ready = True
@@ -108,7 +108,7 @@ def run(event, context):
                 jobs_analyze = []
 
         if not ready:
-            raise ts_model.Exception(ts_model.Exception.STREAM__NOT_ANALYZED)
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_ANALYZE_NONE)
 
         stream._status_analyze = ts_model.Status.DONE
         ts_aws.rds.stream.save_stream(stream)
@@ -118,13 +118,13 @@ def run(event, context):
 
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.STREAM__ALREADY_ANALYZED,
+            ts_model.Exception.STREAM__STATUS_ANALYZE_DONE,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.STREAM__NOT_INITIALIZED,
-            ts_model.Exception.STREAM__NOT_ANALYZED,
+            ts_model.Exception.STREAM__STATUS_INITIALIZE_NONE,
+            ts_model.Exception.STREAM__STATUS_ANALYZE_NONE,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.stream__analyze.change_visibility(receipt_handle)
