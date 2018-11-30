@@ -30,10 +30,46 @@ def run(event, context):
             montage = ts_aws.rds.montage.save_montage(montage)
 
         montage_clips = ts_aws.rds.montage_clip.get_montage_clips(montage)
-        if any(c._status == ts_model.Status.WORKING for c in montage_clips):
-            raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__STATUS_WORKING)
+        ready = True
+        jobs = []
+        for mc in montage_clips:
+            to_create = False
 
-        def process(acc, mc):
+            if mc._status == ts_model.Status.WORKING:
+                ready = False
+            if mc._status == ts_model.Status.NONE:
+                ready = False
+                to_create = True
+                mc._status = ts_model.Status.WORKING
+
+            if to_create == True:
+                jobs.append({
+                    'to_create': to_create,
+                    'mc': mc,
+                })
+
+        if len(jobs):
+            montage_clips_to_save = list(map(lambda j: j['mc'], jobs))
+            ts_aws.rds.montage_clip.save_montage_clips(montage_clips_to_save)
+
+            jobs_create = []
+            for j in jobs:
+                if j['to_create']:
+                    jobs_create.append({
+                        'clip_id': j['mc'].clip_id,
+                    })
+                if len(jobs_create) == 10:
+                    ts_aws.sqs.clip.send_message(jobs_create)
+                    jobs_create = []
+
+            if len(jobs_create):
+                ts_aws.sqs.clip.send_message(jobs_create)
+                jobs_create = []
+
+        if not ready:
+            raise ts_model.Exception(ts_model.Exception.MONTAGE_CLIPS__STATUS_NOT_DONE)
+
+        def finalize(acc, mc):
             mcs = acc[0]
             clips = acc[1]
             duration = acc[2]
@@ -43,7 +79,7 @@ def run(event, context):
                 duration = duration + (mc.time_out - mc.time_in)
             return (mcs, clips, duration)
 
-        (montage_clips, clips, duration) = functools.reduce(process, montage_clips, ([], 0 , 0))
+        (montage_clips, clips, duration) = functools.reduce(finalize, montage_clips, ([], 0 , 0))
         ts_aws.mediaconvert.montage.create(montage, montage_clips)
 
         montage.clips = clips
@@ -62,7 +98,7 @@ def run(event, context):
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.MONTAGE_CLIPS__STATUS_WORKING,
+            ts_model.Exception.MONTAGE_CLIPS__STATUS_NOT_DONE,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.montage.change_visibility(receipt_handle)

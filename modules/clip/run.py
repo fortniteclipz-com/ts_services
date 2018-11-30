@@ -43,7 +43,7 @@ def run(event, context):
                 )
 
         if stream._status_initialize == ts_model.Status.ERROR:
-            clip._status = ts_model.Status.WORKING
+            clip._status = ts_model.Status.ERROR
             clip = ts_aws.rds.clip.save_clip(clip)
             raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_ERROR)
 
