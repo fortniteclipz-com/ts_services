@@ -50,7 +50,7 @@ def run(event, context):
             })
 
         if stream._status_initialize != ts_model.Status.DONE:
-            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_NONE)
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_NOT_DONE)
 
         clip_stream_segments = ts_aws.rds.stream_segment.get_clip_stream_segments(clip)
         ready = True
@@ -126,7 +126,7 @@ def run(event, context):
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             return True
         elif type(e) == ts_model.Exception and e.code in [
-            ts_model.Exception.STREAM__STATUS_INITIALIZE_NONE,
+            ts_model.Exception.STREAM__STATUS_INITIALIZE_NOT_DONE,
             ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NONE,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
