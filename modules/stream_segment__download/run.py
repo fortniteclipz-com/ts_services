@@ -34,7 +34,10 @@ def run(event, context):
                 )
                 ts_aws.rds.stream.save_stream(stream)
 
-        if stream._status_initialize < ts_model.Status.WORKING:
+        if stream._status_initialize == ts_model.Status.ERROR:
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_ERROR)
+
+        if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.WORKING
             ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
@@ -71,6 +74,7 @@ def run(event, context):
 
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM__STATUS_INITIALIZE_ERROR,
             ts_model.Exception.STREAM_SEGMENT__STATUS_DOWNLOAD_DONE,
         ]:
             logger.error("error", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
