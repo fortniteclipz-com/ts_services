@@ -6,6 +6,6 @@ bodies = [{
     'segment': 127,
 }]
 
-for body in bodies:
-    event = {'Records': [{'body': json.dumps(body)}]}
+for b in bodies:
+    event = {'Records': [{'body': json.dumps(b)}]}
     run.run(event, {})

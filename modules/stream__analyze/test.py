@@ -5,6 +5,6 @@ bodies = [{
     'stream_id': "335886831",
 }]
 
-for body in bodies:
-    event = {'Records': [{'body': json.dumps(body)}]}
+for b in bodies:
+    event = {'Records': [{'body': json.dumps(b)}]}
     run.run(event, {})

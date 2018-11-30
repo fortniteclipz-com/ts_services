@@ -13,5 +13,5 @@ events = [{
     }
 }]
 
-for event in events:
-    run.run(event, {})
+for e in events:
+    run.run(e, {})
