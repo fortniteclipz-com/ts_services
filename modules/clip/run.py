@@ -42,7 +42,12 @@ def run(event, context):
                     stream_id=clip.stream_id,
                 )
 
-        if stream._status_initialize < ts_model.Status.WORKING:
+        if stream._status_initialize == ts_model.Status.ERROR:
+            clip._status = ts_model.Status.WORKING
+            clip = ts_aws.rds.clip.save_clip(clip)
+            raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_ERROR)
+
+        if stream._status_initialize == ts_model.Status.NONE:
             stream._status_initialize = ts_model.Status.WORKING
             ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
@@ -120,6 +125,7 @@ def run(event, context):
 
     except Exception as e:
         if type(e) == ts_model.Exception and e.code in [
+            ts_model.Exception.STREAM__STATUS_INITIALIZE_ERROR,
             ts_model.Exception.CLIP__NOT_EXIST,
             ts_model.Exception.CLIP__STATUS_DONE,
         ]:
