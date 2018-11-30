@@ -35,7 +35,7 @@ def run(event, context):
                 ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_initialize == ts_model.Status.NONE:
-            stream._status_initialize = ts_model.Status.INITIALIZING
+            stream._status_initialize = ts_model.Status.READYING
             ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
@@ -47,7 +47,7 @@ def run(event, context):
         stream_segment = ts_aws.rds.stream_segment.get_stream_segment(stream, segment)
 
         if stream_segment._status_download == ts_model.Status.NONE:
-            stream_segment._status_download = ts_model.Status.INITIALIZING
+            stream_segment._status_download = ts_model.Status.READYING
             ts_aws.rds.stream_segment.save_stream_segment(stream_segment)
 
         if stream_segment._status_download == ts_model.Status.READY:

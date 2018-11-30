@@ -32,14 +32,14 @@ def run(event, context):
                 )
 
         if stream._status_analyze == ts_model.Status.NONE:
-            stream._status_analyze = ts_model.Status.INITIALIZING
+            stream._status_analyze = ts_model.Status.READYING
             ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_analyze == ts_model.Status.READY:
             raise ts_model.Exception(ts_model.Exception.STREAM__ALREADY_ANALYZED)
 
         if stream._status_initialize == ts_model.Status.NONE:
-            stream._status_initialize = ts_model.Status.INITIALIZING
+            stream._status_initialize = ts_model.Status.READYING
             ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
                 'stream_id': stream.stream_id,
@@ -55,19 +55,19 @@ def run(event, context):
             to_download = False
             to_analyze = False
 
-            if ss._status_download == ts_model.Status.INITIALIZING:
+            if ss._status_download == ts_model.Status.READYING:
                 ready = False
             if ss._status_download == ts_model.Status.NONE:
                 ready = False
                 to_download = True
-                ss._status_download = ts_model.Status.INITIALIZING
+                ss._status_download = ts_model.Status.READYING
 
-            if ss._status_analyze == ts_model.Status.INITIALIZING:
+            if ss._status_analyze == ts_model.Status.READYING:
                 ready = False
             if ss._status_analyze == ts_model.Status.NONE:
                 ready = False
                 to_analyze = True
-                ss._status_analyze = ts_model.Status.INITIALIZING
+                ss._status_analyze = ts_model.Status.READYING
 
             if to_download == True or to_analyze == True:
                 jobs.append({
