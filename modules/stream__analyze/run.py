@@ -57,14 +57,14 @@ def run(event, context):
 
             if ss._status_download == ts_model.Status.WORKING:
                 ready = False
-            if ss._status_download == ts_model.Status.NONE:
+            if ss._status_download < ts_model.Status.WORKING:
                 ready = False
                 to_download = True
                 ss._status_download = ts_model.Status.WORKING
 
             if ss._status_analyze == ts_model.Status.WORKING:
                 ready = False
-            if ss._status_analyze == ts_model.Status.NONE:
+            if ss._status_analyze < ts_model.Status.WORKING:
                 ready = False
                 to_analyze = True
                 ss._status_analyze = ts_model.Status.WORKING

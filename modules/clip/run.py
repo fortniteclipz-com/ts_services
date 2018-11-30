@@ -26,12 +26,12 @@ def run(event, context):
 
         clip = ts_aws.rds.clip.get_clip(clip_id)
 
-        if clip._status == ts_model.Status.NONE:
-            clip._status = ts_model.Status.WORKING
-            clip = ts_aws.rds.clip.save_clip(clip)
-
         if clip._status == ts_model.Status.DONE:
             raise ts_model.Exception(ts_model.Exception.CLIP__STATUS_DONE)
+
+        if clip._status < ts_model.Status.WORKING:
+            clip._status = ts_model.Status.WORKING
+            clip = ts_aws.rds.clip.save_clip(clip)
 
         try:
             stream = ts_aws.rds.stream.get_stream(clip.stream_id)
@@ -42,7 +42,7 @@ def run(event, context):
                     stream_id=clip.stream_id,
                 )
 
-        if stream._status_initialize == ts_model.Status.NONE:
+        if stream._status_initialize < ts_model.Status.WORKING:
             stream._status_initialize = ts_model.Status.WORKING
             ts_aws.rds.stream.save_stream(stream)
             ts_aws.sqs.stream__initialize.send_message({
@@ -60,7 +60,7 @@ def run(event, context):
 
             if css._status_download == ts_model.Status.WORKING:
                 ready = False
-            if css._status_download == ts_model.Status.NONE:
+            if css._status_download < ts_model.Status.WORKING:
                 ready = False
                 to_download = True
                 css._status_download = ts_model.Status.WORKING
@@ -91,7 +91,7 @@ def run(event, context):
                 jobs_download = []
 
         if not ready:
-            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NONE)
+            raise ts_model.Exception(ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NOT_DONE)
 
         clip_segments = []
         for i, css in enumerate(clip_stream_segments):
@@ -127,7 +127,7 @@ def run(event, context):
             return True
         elif type(e) == ts_model.Exception and e.code in [
             ts_model.Exception.STREAM__STATUS_INITIALIZE_NOT_DONE,
-            ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NONE,
+            ts_model.Exception.STREAM_SEGMENTS__STATUS_DOWNLOAD_NOT_DONE,
         ]:
             logger.warn("warn", _module=f"{e.__class__.__module__}", _class=f"{e.__class__.__name__}", _message=str(e), traceback=''.join(traceback.format_exc()))
             ts_aws.sqs.clip.change_visibility(receipt_handle)
