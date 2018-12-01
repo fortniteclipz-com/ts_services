@@ -76,7 +76,7 @@ def run(event, context):
             duration = acc[2]
             if mc._status == ts_model.Status.DONE:
                 mcs.append(mc)
-                clips = clips + 1
+                clips += 1
                 duration = duration + (mc.time_out - mc.time_in)
             return (mcs, clips, duration)
 
