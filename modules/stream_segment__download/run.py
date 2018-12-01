@@ -32,7 +32,6 @@ def run(event, context):
                 stream = ts_model.Stream(
                     stream_id=stream_id,
                 )
-                ts_aws.rds.stream.save_stream(stream)
 
         if stream._status_initialize == ts_model.Status.ERROR:
             raise ts_model.Exception(ts_model.Exception.STREAM__STATUS_INITIALIZE_ERROR)

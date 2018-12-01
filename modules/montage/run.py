@@ -1,6 +1,7 @@
-import ts_aws.rds.montage_clip
+import ts_aws.rds.clip
 import ts_aws.rds.montage
 import ts_aws.mediaconvert.montage
+import ts_aws.sqs.clip
 import ts_aws.sqs.montage
 import ts_logger
 import ts_model.Exception
@@ -29,41 +30,41 @@ def run(event, context):
             montage._status = ts_model.Status.WORKING
             montage = ts_aws.rds.montage.save_montage(montage)
 
-        montage_clips = ts_aws.rds.montage_clip.get_montage_clips(montage)
+        montage_clips = ts_aws.rds.clip.get_montage_clips(montage)
         ready = True
         jobs = []
         for mc in montage_clips:
-            to_create = False
+            to_clip = False
 
             if mc._status == ts_model.Status.WORKING:
                 ready = False
             if mc._status == ts_model.Status.NONE:
                 ready = False
-                to_create = True
+                to_clip = True
                 mc._status = ts_model.Status.WORKING
 
-            if to_create == True:
+            if to_clip == True:
                 jobs.append({
-                    'to_create': to_create,
+                    'to_clip': to_clip,
                     'mc': mc,
                 })
 
         if len(jobs):
-            montage_clips_to_save = list(map(lambda j: j['mc'], jobs))
-            ts_aws.rds.montage_clip.save_montage_clips(montage_clips_to_save)
+            clips_to_save = list(map(lambda j: j['mc'], jobs))
+            ts_aws.rds.clip.save_clips(clips_to_save)
 
             jobs_create = []
             for j in jobs:
-                if j['to_create']:
+                if j['to_clip']:
                     jobs_create.append({
                         'clip_id': j['mc'].clip_id,
                     })
                 if len(jobs_create) == 10:
-                    ts_aws.sqs.clip.send_message(jobs_create)
+                    ts_aws.sqs.clip.send_messages(jobs_create)
                     jobs_create = []
 
             if len(jobs_create):
-                ts_aws.sqs.clip.send_message(jobs_create)
+                ts_aws.sqs.clip.send_messages(jobs_create)
                 jobs_create = []
 
         if not ready:
