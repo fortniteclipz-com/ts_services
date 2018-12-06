@@ -1,6 +1,6 @@
 service--clip:
   handler: modules/clip/run.run
-  memorySize: 256
+  memorySize: 128
   timeout: 30
   events:
     - sqs:
@@ -23,7 +23,7 @@ service--media--postprocess:
 
 service--montage:
   handler: modules/montage/run.run
-  memorySize: 256
+  memorySize: 128
   timeout: 30
   events:
     - sqs:
@@ -32,7 +32,7 @@ service--montage:
 
 service--stream--analyze:
   handler: modules/stream__analyze/run.run
-  memorySize: 512
+  memorySize: 128
   timeout: 300
   reservedConcurrency: 5
   events:
@@ -42,7 +42,7 @@ service--stream--analyze:
 
 service--stream-segment--download:
   handler: modules/stream_segment__download/run.run
-  memorySize: 1024
+  memorySize: 512
   timeout: 300
   events:
     - sqs:
