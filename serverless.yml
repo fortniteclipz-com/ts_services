@@ -12,7 +12,7 @@ provider:
 
   vpc:
     securityGroupIds:
-      "Fn::ImportValue": 'DefaultSecurityGroup'
+      - "Fn::ImportValue": 'DefaultSecurityGroup'
     subnetIds:
       - "Fn::ImportValue": 'SubnetLambdaA'
       - "Fn::ImportValue": 'SubnetLambdaB'
