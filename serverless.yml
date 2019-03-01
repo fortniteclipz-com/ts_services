@@ -4,12 +4,19 @@ provider:
   name: aws
   profile: serverless-admin
   region: ${self:custom.config.region}
-  runtime: python3.6
+  runtime: python3.7
   stage: ${self:custom.config.stage}
   versionFunctions: false
   environment:
-    ts_env: ${self:custom.config.stage}
+    TS_ENV: ${self:custom.config.stage}
 
+  vpc:
+    securityGroupIds:
+      "Fn::ImportValue": 'DefaultSecurityGroup'
+    subnetIds:
+      - "Fn::ImportValue": 'SubnetLambdaA'
+      - "Fn::ImportValue": 'SubnetLambdaB'
+      - "Fn::ImportValue": 'SubnetLambdaC'
   iamRoleStatements:
     ${self:custom.config.iam.role-statement}
 
@@ -27,8 +34,6 @@ custom:
   pythonRequirements:
     dockerizePip: non-linux
     dockerSsh: true
-    pipCmdExtraArgs:
-      - --process-dependency-links
     slim: true
 
 functions:
