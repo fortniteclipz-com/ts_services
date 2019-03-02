@@ -34,6 +34,8 @@ custom:
   pythonRequirements:
     dockerizePip: non-linux
     dockerSsh: true
+    pipCmdExtraArgs:
+      - --process-dependency-links
     slim: true
 
 functions:
