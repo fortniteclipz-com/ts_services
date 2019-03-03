@@ -7,18 +7,10 @@ provider:
   runtime: python3.6
   stage: ${self:custom.config.stage}
   versionFunctions: false
-  environment:
-    TS_ENV: ${self:custom.config.stage}
-
-  vpc:
-    securityGroupIds:
-      - "Fn::ImportValue": 'DefaultSecurityGroup'
-    subnetIds:
-      - "Fn::ImportValue": 'SubnetLambdaA'
-      - "Fn::ImportValue": 'SubnetLambdaB'
-      - "Fn::ImportValue": 'SubnetLambdaC'
   iamRoleStatements:
     ${self:custom.config.iam.role-statement}
+  environment:
+    TS_ENV: ${self:custom.config.stage}
 
 package:
   exclude:
