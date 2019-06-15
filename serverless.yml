@@ -1,4 +1,6 @@
 service: ts-services-light
+tenant: fortniteclipz
+app: fortniteclipz
 
 provider:
   name: aws
