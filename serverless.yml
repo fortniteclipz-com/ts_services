@@ -4,7 +4,7 @@ app: fortniteclipz
 
 provider:
   name: aws
-  profile: serverless-admin
+  profile: sls-fortniteclipz
   region: ${self:custom.config.region}
   runtime: python3.6
   stage: ${self:custom.config.stage}
