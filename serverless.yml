@@ -26,7 +26,8 @@ plugins:
 custom:
   config: ${file(../ts_shared/ts_config/ts_config/ts_config_${opt:stage, 'dev'}.yml)}
   pythonRequirements:
-    dockerizePip: non-linux
+    dockerFile: ./config/Dockerfile
+    dockerizePip: true
     dockerSsh: true
     pipCmdExtraArgs:
       - --process-dependency-links
