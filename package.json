@@ -4,6 +4,6 @@
   "author": "Ahuja",
   "license": "ISC",
   "devDependencies": {
-    "serverless-python-requirements": "github:sachinahj/ts-serverless-python-requirements#master"
+    "serverless-python-requirements": "github:sachinahj/serverless-python-requirements#master"
   }
 }
