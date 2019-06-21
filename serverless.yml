@@ -1,4 +1,4 @@
-service: ts-services-light
+service: ts-services
 tenant: fortniteclipz
 app: fortniteclipz
 
@@ -12,6 +12,7 @@ provider:
   iamRoleStatements:
     ${self:custom.config.iam.role-statement}
   environment:
+    TESSDATA_PREFIX: /opt/tessdata
     TS_ENV: ${self:custom.config.stage}
 
 package:
@@ -29,9 +30,20 @@ custom:
     dockerFile: ./config/Dockerfile
     dockerizePip: true
     dockerSsh: true
+    noDeploy:
+      - botocore
+      - boto3
+      - docutils
+      - jmespath
+      - pip
+      - python-dateutil
+      - s3transfer
+      - setuptools
+      - six
     pipCmdExtraArgs:
       - --process-dependency-links
     slim: true
+    strip: false
 
 functions:
   - ${file(./config/services.yml)}

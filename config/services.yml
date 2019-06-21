@@ -40,6 +40,30 @@ service--stream--analyze:
         arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream--analyze.name}
         batchSize: 1
 
+service--stream--initialize:
+  handler: modules/stream__initialize/run.run
+  memorySize: 512
+  timeout: 300
+  reservedConcurrency: 5
+  events:
+    - sqs:
+        arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream--initialize.name}
+        batchSize: 1
+  layers:
+    - ${self:custom.config.lambda.layers.ffmpeg.arn}
+
+service--stream-segment--analyze:
+  handler: modules/stream_segment__analyze/run.run
+  memorySize: 1024
+  timeout: 300
+  events:
+    - sqs:
+        arn: arn:aws:sqs:${self:custom.config.region}:${self:custom.config.account-id}:${self:custom.config.sqs.queues.stream-segment--analyze.name}
+        batchSize: 1
+  layers:
+    - ${self:custom.config.lambda.layers.ffmpeg.arn}
+    - ${self:custom.config.lambda.layers.tesseract.arn}
+
 service--stream-segment--download:
   handler: modules/stream_segment__download/run.run
   memorySize: 512
