@@ -1,6 +1,6 @@
-git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_aws&subdirectory=ts_aws
-git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_logger&subdirectory=ts_logger
-git+ssh://git@github.com/sachinahj/ts_shared.git@master#egg=ts_model&subdirectory=ts_model
+git+ssh://git@github.com/fortniteclipz/ts_shared.git@master#egg=ts_aws&subdirectory=ts_aws
+git+ssh://git@github.com/fortniteclipz/ts_shared.git@master#egg=ts_logger&subdirectory=ts_logger
+git+ssh://git@github.com/fortniteclipz/ts_shared.git@master#egg=ts_model&subdirectory=ts_model
 
 opencv-python==3.4.3.18
 python-Levenshtein==0.12.0
