@@ -3,6 +3,7 @@ __pycache__
 node_modules/
 *freeze.txt
 *tmp/
+.DS_STORE
 
 # Distribution / packaging
 .Python
@@ -24,3 +25,7 @@ var/
 
 # Serverless directories
 .serverless
+
+# ML Model
+*saved_models/
+
